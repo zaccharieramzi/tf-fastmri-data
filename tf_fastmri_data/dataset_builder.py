@@ -2,6 +2,7 @@ from pathlib import Path
 
 import tensorflow as tf
 
+from .config import FASTMRI_DATA_DIR, PATHS_MAP
 from .h5 import load_data_from_file as h5_load
 
 
@@ -11,10 +12,11 @@ def _convert_to_tensors(*args):
 class FastMRIDatasetBuilder:
     def __init__(
             self,
-            path,
-            mode='train',
-            slice_random=False,
+            path=None,
+            dataset='train',
+            brain=False,
             multicoil=False,
+            slice_random=False,
             contrast=None,
             af=4,
             shuffle=False,
@@ -24,11 +26,21 @@ class FastMRIDatasetBuilder:
             n_samples=None,
             prefetch=True,
         ):
-        self.path = Path(path)
-        self.mode = mode
-        self._check_mode()
-        self.slice_random = slice_random
+        self.dataset = dataset
+        self._check_dataset()
+        self.brain = brain
         self.multicoil = multicoil
+        if path is None:
+            if FASTMRI_DATA_DIR is None:
+                raise ValueError('You must specify a path to the data.')
+            else:
+                path = self._get_path_default()
+        self.path = Path(path)
+        if self.dataset in ['train', 'val']:
+            self.mode = 'train'
+        elif self.dataset in ['test']:
+            self.mode = 'test'
+        self.slice_random = slice_random
         self.contrast = contrast
         self.af = af
         self.shuffle = shuffle
@@ -48,6 +60,16 @@ class FastMRIDatasetBuilder:
         if prebuild:
             self._build_datasets()
 
+    def _check_dataset(self,):
+        if self.dataset not in ['test', 'val', 'train']:
+            raise ValueError(
+                f'dataset must be train val or test but is {self.dataset}',
+            )
+
+    def _get_path_default(self,):
+        fastmri_data_dir = Path(FASTMRI_DATA_DIR)
+        path_default = fastmri_data_dir / PATHS_MAP[self.brain][self.multicoil][self.dataset]
+        return path_default
 
     def _build_datasets(self):
         self._raw_ds = self.files_ds.map(
@@ -87,11 +109,6 @@ class FastMRIDatasetBuilder:
 
     def preprocessing(self,):
         raise NotImplementedError('You must implement a preprocessing function')
-
-
-    def _check_mode(self):
-        if self.mode not in ['train', 'test']:
-            raise ValueError(f'mode must be train or test but is {self.mode}')
 
     def load_data(self, filename):
         def _load_data(filename):
