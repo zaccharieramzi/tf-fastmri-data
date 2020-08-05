@@ -20,6 +20,9 @@ class FastMRIDatasetBuilder:
             shuffle=False,
             seed=0,
             prebuild=True,
+            repeat=True,
+            n_samples=None,
+            prefetch=True,
         ):
         self.path = Path(path)
         self.mode = mode
@@ -30,6 +33,9 @@ class FastMRIDatasetBuilder:
         self.af = af
         self.shuffle = shuffle
         self.seed = seed
+        self.repeat = repeat
+        self.n_samples = n_samples
+        self.prefetch = prefetch
         self.files_ds = tf.data.Dataset.list_files(str(path) + '/*.h5', shuffle=False)
         if self.shuffle:
             self.files_ds = self.files_ds.shuffle(
@@ -53,6 +59,12 @@ class FastMRIDatasetBuilder:
             self.preprocessing,
             num_parallel_calls=self.num_parallel_calls,
         )
+        if self.n_samples is not None:
+            self._preprocessed_ds = self._preprocessed_ds.take(self.n_samples)
+        if self.repeat is not None:
+            self._preprocessed_ds = self._preprocessed_ds.repeat()
+        if self.prefetch is not None:
+            self._preprocessed_ds = self._preprocessed_ds.prefetch(tf.data.experimental.AUTOTUNE)
         self.built = True
 
     @property
