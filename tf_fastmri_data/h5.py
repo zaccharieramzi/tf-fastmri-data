@@ -19,9 +19,9 @@ def load_data_from_file(filename, slice_random=False):
             kspace = kspace[()]
             if image is not None:
                 image = image[()]
-        mask = h5_obj.get('mask', None)[()]
+        mask = h5_obj.get('mask', None)
         if mask is not None:
-            mask = mask.astype('bool')
+            mask = mask[()].astype('bool')
         ismrmrd_header = h5_obj['ismrmrd_header']
         output_shape = _get_output_shape(ismrmrd_header)
         contrast = h5_obj.attrs['acquisition']
