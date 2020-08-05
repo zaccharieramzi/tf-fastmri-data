@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-def _mask_reshaping_and_casting(mask, shape, multicoil=False):
+def mask_reshaping_and_casting(mask, shape, multicoil=False):
     num_cols = shape[-1]
     mask_shape = tf.ones_like(shape)
     if multicoil:
