@@ -2,7 +2,6 @@ import h5py
 import numpy as np
 import pytest
 import tensorflow as tf
-from tqdm import tqdm
 
 
 K_shape_single_coil = (2, 640, 322)
@@ -98,16 +97,16 @@ def create_full_fastmri_test_tmp_dataset(tmpdir_factory):
     ), numbered=False)
     n_files = 2
     # train
-    for i in tqdm(range(n_files), 'Creating single coil train files'):
+    for i in range(n_files):
         data_filename = f"train_singlecoil_{i}.h5"
         create_data(str(fastmri_tmp_singlecoil_train.join(data_filename)))
     # val
-    for i in tqdm(range(n_files), 'Creating single coil val files'):
+    for i in range(n_files):
         data_filename = f"val_singlecoil_{i}.h5"
         create_data(str(fastmri_tmp_singlecoil_val.join(data_filename)))
     # test
     af_single_coil = []
-    for i in tqdm(range(n_files), 'Creating single coil test files'):
+    for i in range(n_files):
         data_filename = f"test_singlecoil_{i}.h5"
         af = create_data(
             str(fastmri_tmp_singlecoil_test.join(data_filename)),
@@ -127,14 +126,14 @@ def create_full_fastmri_test_tmp_dataset(tmpdir_factory):
     ), numbered=False)
     n_files = 2
     # train
-    for i in tqdm(range(n_files), 'Creating multi coil train files'):
+    for i in range(n_files):
         data_filename = f"train_multicoil_{i}.h5"
         create_data(
             str(fastmri_tmp_multicoil_train.join(data_filename)),
             multicoil=True,
         )
     # val
-    for i in tqdm(range(n_files), 'Creating multi coil val files'):
+    for i in range(n_files):
         data_filename = f"val_multicoil_{i}.h5"
         create_data(
             str(fastmri_tmp_multicoil_val.join(data_filename)),
@@ -142,7 +141,7 @@ def create_full_fastmri_test_tmp_dataset(tmpdir_factory):
         )
     # test
     af_multi_coil = []
-    for i in tqdm(range(n_files), 'Creating multi coil test files'):
+    for i in range(n_files):
         data_filename = f"test_multicoil_{i}.h5"
         af = create_data(
             str(fastmri_tmp_multicoil_test.join(data_filename)),
