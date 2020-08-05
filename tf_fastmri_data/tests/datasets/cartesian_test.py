@@ -11,8 +11,13 @@ file_contrast = 'CORPD_FBK'
 @pytest.mark.parametrize('multicoil', [True, False])
 @pytest.mark.parametrize('contrast', [None, file_contrast])
 @pytest.mark.parametrize('slice_random', [True, False])
-def test_cartesian_dataset_train(mask_mode, output_shape_spec, multicoil, contrast, slice_random):
+def test_cartesian_dataset_train(create_full_fastmri_test_tmp_dataset, mask_mode, output_shape_spec, multicoil, contrast, slice_random):
+    if multicoil:
+        path = create_full_fastmri_test_tmp_dataset['fastmri_tmp_multicoil_train']
+    else:
+        path = create_full_fastmri_test_tmp_dataset['fastmri_tmp_singlecoil_train']
     ds = CartesianFastMRIDatasetBuilder(
+        path=path,
         mask_mode=mask_mode,
         output_shape_spec=output_shape_spec,
         multicoil=multicoil,
