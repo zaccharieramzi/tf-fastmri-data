@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from tf_fastmri_data.datasets.cartesian import CartesianFastMRIDatasetBuilder
@@ -25,6 +26,6 @@ def test_cartesian_dataset_train(create_full_fastmri_test_tmp_dataset, mask_mode
         slice_random=slice_random,
     )
     (kspace, mask, *_others), image = next(ds.preprocessed_ds.as_numpy_iterator())
-    assert kspace.shape[-3:] == kspace_shape[1:]
-    assert mask.shape[-3:] == [1, 1, kspace_shape[-1]]
-    assert image.shape[-3:] == [320, 320, 1]
+    np.testing.assert_equal(kspace.shape[-3:], kspace_shape[1:])
+    np.testing.assert_equal(mask.shape[-3:], [1, 1, kspace_shape[-2]])
+    np.testing.assert_equal(image.shape[-3:], [320, 320, 1])
