@@ -44,11 +44,11 @@ def create_data(filename, multicoil=False, train=True):
     kspace = kspace.astype(np.complex64)
     with h5py.File(filename, "w") as h5_obj:
         h5_obj.create_dataset("kspace", data=kspace)
+        h5_obj.create_dataset('ismrmrd_header', data=fake_xml)
         if train:
             h5_obj.create_dataset(image_ds, data=image)
         else:
             h5_obj.create_dataset('mask', data=mask)
-            h5_obj.create_dataset('ismrmrd_header', data=fake_xml)
             h5_obj.attrs['acceleration'] = af
         h5_obj.attrs['acquisition'] = contrast
     if not train:
