@@ -10,7 +10,7 @@ def mask_reshaping_and_casting(mask, shape, multicoil=False):
         mask_shape = mask_shape[:2]
     final_mask_shape = tf.concat([
         mask_shape,
-        num_cols[None, :],
+        num_cols[None],
     ], axis=0)
     final_mask_reshaped = tf.reshape(mask, final_mask_shape)
     # we need the batch dimension for cases where we split the batch accross
@@ -37,7 +37,7 @@ def mask_random(kspace, accel_factor, multicoil=False):
         mask[pad+num_low_freqs:],
     ], axis=0)
 
-    fourier_mask = _mask_reshaping_and_casting(final_mask, shape, multicoil=multicoil)
+    fourier_mask = mask_reshaping_and_casting(final_mask, shape, multicoil=multicoil)
     return fourier_mask
 
 def mask_equidistant(kspace, accel_factor, multicoil=False):
@@ -64,5 +64,5 @@ def mask_equidistant(kspace, accel_factor, multicoil=False):
         mask,
     )
 
-    fourier_mask = _mask_reshaping_and_casting(final_mask, shape, multicoil=multicoil)
+    fourier_mask = mask_reshaping_and_casting(final_mask, shape, multicoil=multicoil)
     return fourier_mask
