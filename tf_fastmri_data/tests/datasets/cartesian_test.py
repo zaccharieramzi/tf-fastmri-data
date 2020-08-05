@@ -24,7 +24,7 @@ def test_cartesian_dataset_train(create_full_fastmri_test_tmp_dataset, mask_mode
         contrast=contrast,
         slice_random=slice_random,
     )
-    (kspace, mask, *_others), image = next(ds.as_numpy_iterator())
+    (kspace, mask, *_others), image = next(ds.preprocessed_ds.as_numpy_iterator())
     assert kspace.shape[-3:] == kspace_shape[1:]
     assert mask.shape[-3:] == [1, 1, kspace_shape[-1]]
     assert image.shape[-3:] == [320, 320, 1]
