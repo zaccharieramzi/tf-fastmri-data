@@ -48,7 +48,7 @@ class FastMRIDatasetBuilder:
         self.repeat = repeat
         self.n_samples = n_samples
         self.prefetch = prefetch
-        self.files_ds = tf.data.Dataset.list_files(str(path) + '/*.h5', shuffle=False)
+        self.files_ds = tf.data.Dataset.list_files(str(path) + '*.h5', shuffle=False)
         if self.shuffle:
             self.files_ds = self.files_ds.shuffle(
                 buffer_size=1000,
