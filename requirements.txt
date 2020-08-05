@@ -1,3 +1,5 @@
 h5py
 ismrmrd
+numpy
 tensorflow==2.2
+tfkbnufft
