@@ -76,8 +76,8 @@ class FastMRIDatasetBuilder:
             self.load_data,
             num_parallel_calls=self.num_parallel_calls,
         )
-        self._filtered_ds = self.raw_ds.map(self.filter_condition)
-        self._preprocessed_ds = self.files_ds.map(
+        self._filtered_ds = self._raw_ds.map(self.filter_condition)
+        self._preprocessed_ds = self._filtered_ds.map(
             self.preprocessing,
             num_parallel_calls=self.num_parallel_calls,
         )
@@ -107,7 +107,7 @@ class FastMRIDatasetBuilder:
             self._build_datasets()
         return self._preprocessed_ds
 
-    def preprocessing(self,):
+    def preprocessing(self, *data_tensors):
         raise NotImplementedError('You must implement a preprocessing function')
 
     def load_data(self, filename):
