@@ -76,7 +76,7 @@ class FastMRIDatasetBuilder:
             self.load_data,
             num_parallel_calls=self.num_parallel_calls,
         )
-        self._filtered_ds = self._raw_ds.map(self.filter_condition)
+        self._filtered_ds = self._raw_ds.filter(self.filter_condition)
         self._preprocessed_ds = self._filtered_ds.map(
             self.preprocessing,
             num_parallel_calls=self.num_parallel_calls,
