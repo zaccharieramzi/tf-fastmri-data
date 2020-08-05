@@ -29,6 +29,11 @@ Afterwards, you should receive an email with data download links.
 You can then use the environment variable `FASTMRI_DATA_DIR` to indicate where your fastMRI is.
 This will allow you to not have to specify the path when instantiating a `FastMRIDatasetBuilder`.
 
+## PyTorch
+
+The PyTorch equivalent of this library is simply the [official fastMRI repository](https://github.com/facebookresearch/fastMRI).
+In particular, the [data folder](https://github.com/facebookresearch/fastMRI/tree/master/data) is where you find the data utils.
+
 ## Citation
 
 If you use the fastMRI data or this code in your research, please consider citing the fastMRI dataset paper:
