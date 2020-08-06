@@ -76,7 +76,7 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         return model_inputs, image
 
     def _preprocessing_test(self, kspace, mask, _contrast, _af, output_shape):
-        kspace = scale_tensors(kspace, scale_factor=self.scale_factor)
+        (kspace,) = scale_tensors(kspace, scale_factor=self.scale_factor)
         kspace = kspace[..., None]
         mask = mask_reshaping_and_casting(mask, tf.shape(kspace[..., 0]), multicoil=self.multicoil)
         model_inputs = (kspace, mask)
