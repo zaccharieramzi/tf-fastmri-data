@@ -125,7 +125,7 @@ class FastMRIDatasetBuilder:
         if self.mode == 'train':
             output_types = [tf.complex64, tf.float32, tf.string]
         elif self.mode == 'test':
-            output_types = [tf.complex64, tf.bool, tf.string, tf.int64, tf.int64]
+            output_types = [tf.complex64, tf.bool, tf.string, tf.int64, tf.int32]
         data_tensors = tf.py_function(
             _load_data,
             [filename],
