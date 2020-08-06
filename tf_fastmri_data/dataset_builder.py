@@ -68,7 +68,7 @@ class FastMRIDatasetBuilder:
 
     def _get_path_default(self,):
         fastmri_data_dir = Path(FASTMRI_DATA_DIR)
-        path_default = fastmri_data_dir / PATHS_MAP[self.brain][self.multicoil][self.dataset]
+        path_default = fastmri_data_dir / PATHS_MAP[self.multicoil][self.brain][self.dataset]
         return path_default
 
     def _build_datasets(self):
