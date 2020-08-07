@@ -83,9 +83,9 @@ class FastMRIDatasetBuilder:
         )
         if self.n_samples is not None:
             self._preprocessed_ds = self._preprocessed_ds.take(self.n_samples)
-        if self.repeat is not None:
+        if self.repeat:
             self._preprocessed_ds = self._preprocessed_ds.repeat()
-        if self.prefetch is not None:
+        if self.prefetch:
             self._preprocessed_ds = self._preprocessed_ds.prefetch(tf.data.experimental.AUTOTUNE)
         self.built = True
 
