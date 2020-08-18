@@ -96,5 +96,5 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         if self.multicoil
             smaps = non_cartesian_extract_smaps(nc_kspace, traj, dcomp, nufftob_back, orig_shape)
             model_inputs += (smaps,)
-        model_inputs += (*extra_args,)
+        model_inputs += (extra_args,)
         return model_inputs, image
