@@ -55,7 +55,7 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             stddev=1.0,
             dtype=image.dtype,
         )
-        if not self.batching
+        if not self.batching:
             noise_power_bdcast = noise_power[:, None, None, None]
         else:
             noise_power_bdcast = noise_power
