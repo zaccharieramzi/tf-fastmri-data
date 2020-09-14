@@ -29,6 +29,7 @@ def test_cartesian_dataset_train(create_full_fastmri_test_tmp_dataset, mask_mode
     np.testing.assert_equal(kspace.shape[-3:], kspace_shape[1:])
     np.testing.assert_equal(mask.shape[-2:], [1, kspace_shape[-2]])
     np.testing.assert_equal(image.shape[-3:], [320, 320, 1])
+    np.testing.assert_equal(image.ndim, 4)
 
 @pytest.mark.parametrize('mask_mode', ['equidistant', 'random'])
 @pytest.mark.parametrize('output_shape_spec', [True, False])
