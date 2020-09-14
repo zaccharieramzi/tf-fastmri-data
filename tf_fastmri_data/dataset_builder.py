@@ -80,7 +80,7 @@ class FastMRIDatasetBuilder:
 
     def _build_datasets(self):
         self._raw_ds = self.files_ds.interleave(
-            lambda x: tf.data.Dataset.from_tensors(self.load_data(x)),
+            lambda x: tf.data.Dataset.from_tensors(tuple(self.load_data(x))),
             num_parallel_calls=self.num_parallel_calls,
         )
         self._filtered_ds = self._raw_ds.filter(self.filter_condition)
