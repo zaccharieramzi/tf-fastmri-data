@@ -28,6 +28,7 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         super(NoisyFastMRIDatasetBuilder, self).__init__(
             dataset=self.dataset,
             brain=self.brain,
+            no_kspace=True,
             **kwargs,
         )
         if self.mode == 'test':

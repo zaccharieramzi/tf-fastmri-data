@@ -25,6 +25,7 @@ class FastMRIDatasetBuilder:
             repeat=True,
             n_samples=None,
             prefetch=True,
+            no_kspace=False,
         ):
         self.dataset = dataset
         self._check_dataset()
@@ -48,6 +49,7 @@ class FastMRIDatasetBuilder:
         self.repeat = repeat
         self.n_samples = n_samples
         self.prefetch = prefetch
+        self.no_kspace = no_kspace
         self.files_ds = tf.data.Dataset.list_files(str(self.path) + '/*.h5', shuffle=False)
         if self.shuffle:
             self.files_ds = self.files_ds.shuffle(
@@ -116,6 +118,7 @@ class FastMRIDatasetBuilder:
             kspace, image, mask, contrast, af, output_shape = h5_load(
                 filename_str,
                 slice_random=self.slice_random,
+                no_kspace=self.no_kspace,
             )
             if self.mode == 'train':
                 outputs = (kspace, image, contrast)
