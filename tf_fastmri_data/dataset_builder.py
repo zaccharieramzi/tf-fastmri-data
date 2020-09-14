@@ -27,6 +27,7 @@ class FastMRIDatasetBuilder:
             n_samples=None,
             prefetch=True,
             no_kspace=False,
+            batch_size=None,
         ):
         self.dataset = dataset
         self._check_dataset()
@@ -51,6 +52,9 @@ class FastMRIDatasetBuilder:
         self.n_samples = n_samples
         self.prefetch = prefetch
         self.no_kspace = no_kspace
+        self.batch_size = batch_size
+        if self.batch_size is not None and not self.slice_random:
+            raise ValueError('You can only use batching when selecting one slice')
         self.files_ds = tf.data.Dataset.list_files(str(self.path) + '/*.h5', shuffle=False)
         if self.shuffle:
             self.files_ds = self.files_ds.shuffle(
@@ -75,11 +79,13 @@ class FastMRIDatasetBuilder:
         return path_default
 
     def _build_datasets(self):
-        self._raw_ds = self.files_ds.map(
-            self.load_data,
+        self._raw_ds = self.files_ds.interleave(
+            lambda x: tf.data.Dataset.from_tensors(tuple(self.load_data(x))),
             num_parallel_calls=self.num_parallel_calls,
         )
         self._filtered_ds = self._raw_ds.filter(self.filter_condition)
+        if self.batch_size is not None:
+            self._filtered_ds = self._filtered_ds.batch(self.batch_size)
         self._preprocessed_ds = self._filtered_ds.map(
             self.preprocessing,
             num_parallel_calls=self.num_parallel_calls,
