@@ -20,7 +20,7 @@ def test_cartesian_dataset_train(create_full_fastmri_test_tmp_dataset, contrast,
             contrast=contrast,
             slice_random=slice_random,
             noise_input=noise_input,
-            noise_power=noise_power,
+            noise_power_spec=noise_power,
             noise_mode=noise_mode,
         )
         (image_noisy, *_others), model_outputs = next(ds.preprocessed_ds.as_numpy_iterator())
