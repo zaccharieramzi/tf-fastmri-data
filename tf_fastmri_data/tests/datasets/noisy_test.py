@@ -26,9 +26,5 @@ def test_cartesian_dataset_train(create_full_fastmri_test_tmp_dataset, contrast,
             batch_size=batch_size,
         )
         (image_noisy, *_others), model_outputs = next(ds.preprocessed_ds.as_numpy_iterator())
-        if batch_size is not None:
-            np.testing.assert_equal(model_outputs.shape[-3:], [320, 320, 1])
-            np.testing.assert_equal(image_noisy.shape[-3:], [320, 320, 1])
-        else:
-            np.testing.assert_equal(model_outputs.shape, [320, 320, 1])
-            np.testing.assert_equal(image_noisy.shape, [320, 320, 1])
+        np.testing.assert_equal(model_outputs.shape[-3:], [320, 320, 1])
+        np.testing.assert_equal(image_noisy.shape[-3:], [320, 320, 1])
