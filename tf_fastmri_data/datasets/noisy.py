@@ -12,6 +12,7 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             scale_factor=1e6,
             noise_power=30,
             noise_input=True,
+            residual_learning=False,
             **kwargs,
         ):
         self.dataset = dataset
@@ -25,6 +26,7 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             noise_power = (noise_power, noise_power)
         self.noise_power = noise_power
         self.noise_input = noise_input
+        self.residual_learning = residual_learning
         super(NoisyFastMRIDatasetBuilder, self).__init__(
             dataset=self.dataset,
             brain=self.brain,
@@ -48,7 +50,11 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         model_inputs = (image_noisy,)
         if self.noise_input:
             model_inputs += (noise_power,)
-        return model_inputs, image
+        if self.residual_learning:
+            model_outputs = noise
+        else:
+            model_outputs = image
+        return model_inputs, model_outputs
 
     def draw_noise_power(self):
         noise_power = tf.random.uniform(
