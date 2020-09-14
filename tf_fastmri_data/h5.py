@@ -33,7 +33,11 @@ def load_data_from_file(filename, slice_random=False, no_kspace=False):
         return kspace, image, mask, contrast, acceleration_factor, output_shape
 
 def _slice_selection(kspace, image):
-    i_max = kspace.shape[0] - 1
+    if kspace is not None:
+        base_tensor = kspace
+    else:
+        base_tensor = image
+    i_max = base_tensor.shape[0] - 1
     i_slice = random.randint(0, i_max)
     if kspace is not None:
         kspace = kspace[i_slice:i_slice+1]
