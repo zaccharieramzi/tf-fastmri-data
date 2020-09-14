@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import tensorflow as tf
 
 from .config import FASTMRI_DATA_DIR, PATHS_MAP
@@ -121,6 +122,8 @@ class FastMRIDatasetBuilder:
                 no_kspace=self.no_kspace,
             )
             if self.mode == 'train':
+                if self.no_kspace:
+                    kspace = np.zeros_like(image, dtype=np.complex64)
                 outputs = (kspace, image, contrast)
             elif self.mode == 'test':
                 outputs = (kspace, mask, contrast, af, output_shape)
