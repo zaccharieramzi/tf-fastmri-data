@@ -10,8 +10,9 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             dataset='train',
             brain=False,
             scale_factor=1e6,
-            noise_power=30,
+            noise_power_spec=30,
             noise_input=True,
+            noise_mode='uniform',
             residual_learning=False,
             **kwargs,
         ):
@@ -22,8 +23,9 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             kwargs.update(repeat=False, prefetch=False)
         self.brain = brain
         self.scale_factor = scale_factor
-        self.noise_power = noise_power
+        self.noise_power_spec = noise_power_spec
         self.noise_input = noise_input
+        self.noise_mode = noise_mode
         self.residual_learning = residual_learning
         super(NoisyFastMRIDatasetBuilder, self).__init__(
             dataset=self.dataset,
@@ -37,13 +39,14 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
     def _preprocessing_train(self, _kspace, image, _contrast):
         image = scale_tensors(image, scale_factor=self.scale_factor)[0]
         image = image[..., None]
-        noise_power = self.draw_noise_power()
+        noise_power = self.draw_noise_power(batch_size=tf.shape(image)[0])
         noise = tf.random.normal(
             shape=tf.shape(image),
             mean=0.0,
-            stddev=noise_power,
+            stddev=1.0,
             dtype=image.dtype,
         )
+        noise = noise * noise_power
         image_noisy = image + noise
         model_inputs = (image_noisy,)
         if self.noise_input:
@@ -54,16 +57,32 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             model_outputs = image
         return model_inputs, model_outputs
 
-    def draw_noise_power(self):
-        if isinstance(self.noise_power, (int, float)):
-            noise_power = (self.noise_power, self.noise_power)
+    def _draw_gaussian_noise_power(self, batch_size):
+        noise_power = tf.random.normal(
+            shape=(batch_size,),
+            mean=0.0,
+            stddev=self.noise_power_spec,
+        )
+        return noise_power
+
+    def _draw_uniform_noise_power(self, batch_size):
+        if isinstance(self.noise_power_spec, (int, float)):
+            noise_power = (self.noise_power_spec, self.noise_power_spec)
         else:
-            noise_power = self.noise_power
+            noise_power = self.noise_power_spec
         noise_power = tf.random.uniform(
-            (1,),
+            (batch_size,),
             minval=noise_power[0],
             maxval=noise_power[1],
         )
+        return noise_power
+
+    def draw_noise_power(self, batch_size):
+        if self.noise_mode == 'uniform':
+            draw_func = self._draw_uniform_noise_power
+        else:
+            draw_func = self._draw_gaussian_noise_power
+        noise_power = draw_func(batch_size)
         return noise_power
 
     def preprocessing(self, *data_tensors):
