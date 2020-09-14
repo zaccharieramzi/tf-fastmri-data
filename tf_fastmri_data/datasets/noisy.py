@@ -22,8 +22,6 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             kwargs.update(repeat=False, prefetch=False)
         self.brain = brain
         self.scale_factor = scale_factor
-        if isinstance(noise_power, (int, float)):
-            noise_power = (noise_power, noise_power)
         self.noise_power = noise_power
         self.noise_input = noise_input
         self.residual_learning = residual_learning
@@ -57,10 +55,14 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         return model_inputs, model_outputs
 
     def draw_noise_power(self):
+        if isinstance(self.noise_power, (int, float)):
+            noise_power = (self.noise_power, self.noise_power)
+        else:
+            noise_power = self.noise_power
         noise_power = tf.random.uniform(
             (1,),
-            minval=self.noise_power[0],
-            maxval=self.noise_power[1],
+            minval=noise_power[0],
+            maxval=noise_power[1],
         )
         return noise_power
 
