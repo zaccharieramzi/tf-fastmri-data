@@ -14,7 +14,6 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             noise_input=True,
             noise_mode='uniform',
             residual_learning=False,
-            slice_random=False,
             **kwargs,
         ):
         self.dataset = dataset
@@ -28,11 +27,9 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         self.noise_input = noise_input
         self.noise_mode = noise_mode
         self.residual_learning = residual_learning
-        self.slice_random = slice_random
         super(NoisyFastMRIDatasetBuilder, self).__init__(
             dataset=self.dataset,
             brain=self.brain,
-            slice_random=self.slice_random,
             no_kspace=True,
             **kwargs,
         )
