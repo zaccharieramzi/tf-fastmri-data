@@ -46,9 +46,9 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
     def _preprocessing_train(self, _kspace, image, _contrast):
         image = scale_tensors(image, scale_factor=self.scale_factor)[0]
         image = image[..., None]
+        noise_power = self.draw_noise_power(batch_size=tf.shape(image)[0])
         if self.batching:
             image = image[0]
-        noise_power = self.draw_noise_power(batch_size=tf.shape(image)[0])
         noise = tf.random.normal(
             shape=tf.shape(image),
             mean=0.0,
