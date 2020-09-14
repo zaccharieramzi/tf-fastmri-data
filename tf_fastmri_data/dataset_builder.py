@@ -55,6 +55,8 @@ class FastMRIDatasetBuilder:
         self.batch_size = batch_size
         if self.batch_size is not None and not self.slice_random:
             raise ValueError('You can only use batching when selecting one slice')
+        if self.slice_random and self.batch_size is None:
+            self.batch_size = 1
         self.files_ds = tf.data.Dataset.list_files(str(self.path) + '/*.h5', shuffle=False)
         if self.shuffle:
             self.files_ds = self.files_ds.shuffle(
@@ -151,12 +153,16 @@ class FastMRIDatasetBuilder:
             kspace, image, contrast = data_tensors
         elif self.mode == 'test':
             kspace, mask, contrast, af, output_shape = data_tensors
-        kspace_size = [None] * 3
+        kspace_size = [None] * 2
+        if not self.slice_random:
+            kspace_size.append(None)
         if self.multicoil:
             kspace_size.append(None)
         kspace.set_shape(kspace_size)
         if self.mode == 'train':
-            image_size = [None] * 3
+            image_size = [None] * 2
+            if not self.slice_random:
+                image_size.append(None)
             image.set_shape(image_size)
             return kspace, image, contrast
         elif self.mode == 'test':

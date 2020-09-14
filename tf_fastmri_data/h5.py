@@ -40,9 +40,9 @@ def _slice_selection(kspace, image):
     i_max = base_tensor.shape[0] - 1
     i_slice = random.randint(0, i_max)
     if kspace is not None:
-        kspace = kspace[i_slice:i_slice+1]
+        kspace = kspace[i_slice]
     if image is not None:
-        image = image[i_slice:i_slice+1]
+        image = image[i_slice]
     return kspace, image
 
 def _get_output_shape(ismrmrd_header):
