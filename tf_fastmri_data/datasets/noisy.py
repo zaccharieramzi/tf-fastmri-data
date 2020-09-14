@@ -14,6 +14,8 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             noise_input=True,
             noise_mode='uniform',
             residual_learning=False,
+            batching=False,
+            slice_random=False,
             **kwargs,
         ):
         self.dataset = dataset
@@ -27,9 +29,14 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         self.noise_input = noise_input
         self.noise_mode = noise_mode
         self.residual_learning = residual_learning
+        self.batching = batching
+        self.slice_random = slice_random
+        if self.batching and not self.slice_random:
+            raise ValueError('You can only use batching when selecting one slice')
         super(NoisyFastMRIDatasetBuilder, self).__init__(
             dataset=self.dataset,
             brain=self.brain,
+            slice_random=self.slice_random,
             no_kspace=True,
             **kwargs,
         )
@@ -39,6 +46,8 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
     def _preprocessing_train(self, _kspace, image, _contrast):
         image = scale_tensors(image, scale_factor=self.scale_factor)[0]
         image = image[..., None]
+        if self.batching:
+            image = image[0]
         noise_power = self.draw_noise_power(batch_size=tf.shape(image)[0])
         noise = tf.random.normal(
             shape=tf.shape(image),
@@ -46,7 +55,11 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             stddev=1.0,
             dtype=image.dtype,
         )
-        noise = noise * noise_power[:, None, None, None]
+        if not self.batching
+            noise_power_bdcast = noise_power[:, None, None, None]
+        else:
+            noise_power_bdcast = noise_power
+        noise = noise *
         image_noisy = image + noise
         model_inputs = (image_noisy,)
         if self.noise_input:
