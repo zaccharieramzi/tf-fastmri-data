@@ -14,7 +14,7 @@ file_contrast = 'CORPD_FBK'
 @pytest.mark.parametrize('noise_mode', ['uniform', 'gaussian'])
 @pytest.mark.parametrize('batching', [True, False])
 def test_cartesian_dataset_train(create_full_fastmri_test_tmp_dataset, contrast, slice_random, noise_input, noise_power, noise_mode, batching):
-    if not (noise_mode == 'gaussian' and isinstance(noise_power, tuple)):
+    if not (noise_mode == 'gaussian' and isinstance(noise_power, tuple)) and not (batching and not slice_random):
         path = create_full_fastmri_test_tmp_dataset['fastmri_tmp_singlecoil_train']
         ds = NoisyFastMRIDatasetBuilder(
             path=path,
