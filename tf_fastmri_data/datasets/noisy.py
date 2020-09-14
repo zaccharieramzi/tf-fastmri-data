@@ -59,7 +59,7 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             noise_power_bdcast = noise_power[:, None, None, None]
         else:
             noise_power_bdcast = noise_power
-        noise = noise *
+        noise = noise * noise_power_bdcast
         image_noisy = image + noise
         model_inputs = (image_noisy,)
         if self.noise_input:
