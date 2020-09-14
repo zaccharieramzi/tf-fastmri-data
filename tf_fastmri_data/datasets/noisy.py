@@ -46,7 +46,7 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             stddev=1.0,
             dtype=image.dtype,
         )
-        noise = noise * noise_power
+        noise = noise * noise_power[:, None, None, None]
         image_noisy = image + noise
         model_inputs = (image_noisy,)
         if self.noise_input:
