@@ -7,8 +7,6 @@ from tf_fastmri_data.preprocessing_utils.scaling import scale_tensors
 class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
     def __init__(
             self,
-            dataset='train',
-            brain=False,
             scale_factor=1e6,
             noise_power_spec=30,
             noise_input=True,
@@ -16,20 +14,12 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             residual_learning=False,
             **kwargs,
         ):
-        self.dataset = dataset
-        if self.dataset in ['train', 'val']:
-            kwargs.update(prefetch=True)
-        elif self.dataset in ['test']:
-            kwargs.update(repeat=False, prefetch=False)
-        self.brain = brain
         self.scale_factor = scale_factor
         self.noise_power_spec = noise_power_spec
         self.noise_input = noise_input
         self.noise_mode = noise_mode
         self.residual_learning = residual_learning
         super(NoisyFastMRIDatasetBuilder, self).__init__(
-            dataset=self.dataset,
-            brain=self.brain,
             no_kspace=True,
             **kwargs,
         )
