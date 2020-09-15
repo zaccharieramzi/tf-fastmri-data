@@ -36,7 +36,7 @@ def test_noisy_dataset_train(create_full_fastmri_test_tmp_dataset, contrast, sli
 @pytest.mark.parametrize('noise_input', [True, False])
 @pytest.mark.parametrize('noise_power', [30, (0, 50)])
 @pytest.mark.parametrize('noise_mode', ['uniform', 'gaussian'])
-@pytest.mark.parametrize('batch_size', [None, 2])
+@pytest.mark.parametrize('batch_size', [None])
 def test_complex_noisy_dataset_train(create_full_fastmri_test_tmp_dataset, contrast, slice_random, noise_input, noise_power, noise_mode, batch_size):
     if not (noise_mode == 'gaussian' and isinstance(noise_power, tuple)) and not (batch_size and not slice_random):
         path = create_full_fastmri_test_tmp_dataset['fastmri_tmp_singlecoil_train']
