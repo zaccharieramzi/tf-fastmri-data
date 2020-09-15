@@ -52,14 +52,14 @@ class FastMRIDatasetBuilder:
         self.repeat = repeat
         self.n_samples = n_samples
         self.prefetch = prefetch
-        self.no_kspace = no_kspace
+        self._no_kspace = no_kspace
         self.batch_size = batch_size
         self.kspace_size = kspace_size
         if self.batch_size is not None and not self.slice_random:
             raise ValueError('You can only use batching when selecting one slice')
         if self.slice_random and self.batch_size is None:
             self.batch_size = 1
-        self.same_size_kspace = self.batch_size is None or (self.batch_size > 1 and not self.no_kspace)
+        self.set_kspace_same_size()
         self.files_ds = tf.data.Dataset.list_files(str(self.path) + '/*.h5', shuffle=False)
         if self.shuffle:
             self.files_ds = self.files_ds.shuffle(
@@ -125,6 +125,18 @@ class FastMRIDatasetBuilder:
         if not self.built:
             self._build_datasets()
         return self._preprocessed_ds
+
+    @property
+    def no_kspace(self):
+        return self._no_kspace
+
+    def set_kspace_same_size(self):
+        self.same_size_kspace = self.batch_size is None or (self.batch_size > 1 and not self._no_kspace)
+
+    @no_kspace.setter
+    def no_kspace(self, val):
+        self._no_kspace = val
+        self.set_kspace_same_size()
 
     def preprocessing(self, *data_tensors):
         raise NotImplementedError('You must implement a preprocessing function')
