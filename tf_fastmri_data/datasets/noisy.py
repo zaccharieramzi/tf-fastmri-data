@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from tf_fastmri_data.dataset_builder import FastMRIDatasetBuilder
-from tf_fastmri_data.preprocessing_utils.fourier import ortho_ifft2d
+from tf_fastmri_data.preprocessing_utils.fourier.cartesian import ortho_ifft2d
 from tf_fastmri_data.preprocessing_utils.scaling import scale_tensors
 
 
