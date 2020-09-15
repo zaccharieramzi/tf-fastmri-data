@@ -87,7 +87,7 @@ class FastMRIDatasetBuilder:
         )
         self._filtered_ds = self._raw_ds.filter(self.filter_condition)
         if self.batch_size is not None:
-            self._filtered_ds = self._filtered_ds.padded_batch(self.batch_size)
+            self._filtered_ds = self._filtered_ds.batch(self.batch_size)
         self._preprocessed_ds = self._filtered_ds.map(
             self.preprocessing,
             num_parallel_calls=self.num_parallel_calls,
