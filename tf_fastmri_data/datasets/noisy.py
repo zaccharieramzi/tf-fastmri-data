@@ -1,6 +1,7 @@
 import tensorflow as tf
 
 from tf_fastmri_data.dataset_builder import FastMRIDatasetBuilder
+from tf_fastmri_data.preprocessing_utils.fourier.cartesian import ortho_ifft2d
 from tf_fastmri_data.preprocessing_utils.scaling import scale_tensors
 
 
@@ -84,3 +85,42 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
     def preprocessing(self, *data_tensors):
         preprocessing_outputs = self._preprocessing_train(*data_tensors)
         return preprocessing_outputs
+
+
+class ComplexNoisyFastMRIDatasetBuilder(NoisyFastMRIDatasetBuilder):
+    def __init__(self, **kwargs,):
+        orig_prebuild = kwargs.get('prebuild', True)
+        kwargs.update(dict(prebuild=False))
+        super(ComplexNoisyFastMRIDatasetBuilder, self).__init__(
+            **kwargs,
+        )
+        self.no_kspace = False
+        if orig_prebuild:
+            self._build_datasets()
+
+    def _preprocessing_train(self, kspace, _image, _contrast):
+        kspace = scale_tensors(kspace, scale_factor=self.scale_factor)[0]
+        image = ortho_ifft2d(kspace)
+        image = image[..., None]
+        noise_power = self.draw_noise_power(batch_size=tf.shape(image)[0])
+        normal_noise = tf.random.normal(
+            shape=tf.concat([tf.shape(image), [2]], axis=0),
+            mean=0.0,
+            stddev=1.0,
+            dtype=tf.float32,
+        )
+        normal_noise = tf.complex(normal_noise[..., 0], normal_noise[..., 1])
+        noise_power_bdcast = noise_power[:, None, None, None]
+        noise = normal_noise * tf.cast(noise_power_bdcast, normal_noise.dtype)
+        image_noisy = image + noise
+        model_inputs = (image_noisy,)
+        if self.noise_input:
+            model_inputs += (noise_power,)
+        if self.residual_learning:
+            if self.normal_noise_output:
+                model_outputs = normal_noise
+            else:
+                model_outputs = noise
+        else:
+            model_outputs = image
+        return model_inputs, model_outputs
