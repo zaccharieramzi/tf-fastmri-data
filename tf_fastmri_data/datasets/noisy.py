@@ -12,6 +12,7 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             noise_input=True,
             noise_mode='uniform',
             residual_learning=False,
+            normal_noise_output=False,
             **kwargs,
         ):
         self.scale_factor = scale_factor
@@ -19,6 +20,7 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         self.noise_input = noise_input
         self.noise_mode = noise_mode
         self.residual_learning = residual_learning
+        self.normal_noise_output = normal_noise_output
         super(NoisyFastMRIDatasetBuilder, self).__init__(
             no_kspace=True,
             **kwargs,
@@ -30,20 +32,23 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         image = scale_tensors(image, scale_factor=self.scale_factor)[0]
         image = image[..., None]
         noise_power = self.draw_noise_power(batch_size=tf.shape(image)[0])
-        noise = tf.random.normal(
+        normal_noise = tf.random.normal(
             shape=tf.shape(image),
             mean=0.0,
             stddev=1.0,
             dtype=image.dtype,
         )
         noise_power_bdcast = noise_power[:, None, None, None]
-        noise = noise * noise_power_bdcast
+        noise = normal_noise * noise_power_bdcast
         image_noisy = image + noise
         model_inputs = (image_noisy,)
         if self.noise_input:
             model_inputs += (noise_power,)
         if self.residual_learning:
-            model_outputs = noise
+            if self.normal_noise_output:
+                model_outputs = normal_noise
+            else:
+                model_outputs = noise
         else:
             model_outputs = image
         return model_inputs, model_outputs
