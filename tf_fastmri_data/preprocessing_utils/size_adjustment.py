@@ -3,14 +3,11 @@ import tensorflow as tf
 def pad(x, size):
     shape = tf.shape(x)[-1]
     to_pad = size[-1] - shape
-    # TODO: adapt this for multicoil
+    padding = [(0, 0) for _ in range(len(tf.shape(x)) - 1)]
+    padding.append((to_pad//2, to_pad//2))
     padded_x = tf.pad(
         x,
-        [
-            (0, 0),
-            (0, 0),
-            (to_pad//2, to_pad//2)
-        ]
+        padding,
     )
     return padded_x
 
