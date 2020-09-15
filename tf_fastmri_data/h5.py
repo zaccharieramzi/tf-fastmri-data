@@ -11,7 +11,7 @@ def load_data_from_file(filename, slice_random=False, no_kspace=False, kspace_si
         else:
             kspace = h5_obj['kspace']
             shape = kspace.shape
-            if kspace_size[0] > shape[-2]:
+            if kspace_size is not None and kspace_size[0] > shape[-2]:
                 crop_phase = shape[-2] - kspace_size[0]
             else:
                 crop_phase = None

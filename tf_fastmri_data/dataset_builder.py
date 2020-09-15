@@ -148,6 +148,7 @@ class FastMRIDatasetBuilder:
                 filename_str,
                 slice_random=self.slice_random,
                 no_kspace=self.no_kspace,
+                kspace_size=self.kspace_size,
             )
             if self.mode == 'train':
                 if self.no_kspace:
