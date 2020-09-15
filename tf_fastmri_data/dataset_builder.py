@@ -198,9 +198,6 @@ class FastMRIDatasetBuilder:
             lambda: crop(kspace, self.kspace_size),
             lambda: pad(kspace, self.kspace_size),
         )
-        if self.kspace_size[0] < 640:
-            to_crop = tf.shape(kspace_adapted)[-2] - self.kspace_size[0]
-            kspace_adapted = kspace_adapted[..., to_crop//2:-to_crop//2, :]
         outputs = [kspace_adapted] + others
         return outputs
 
