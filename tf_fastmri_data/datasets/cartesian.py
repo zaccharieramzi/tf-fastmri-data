@@ -61,12 +61,12 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         return mask
 
     def _preprocessing_train(self, kspace, image, _contrast):
-        mask = self.gen_mask(kspace)
-        kspace = tf.cast(mask, kspace.dtype) * kspace
         if self.kspace_size[0] < 640 or (self.same_size_kspace and self.batch_size is not None):
             image = ortho_ifft2d(kspace)
             # TODO: handle multicoil here potentially
             image = tf.abs(image)
+        mask = self.gen_mask(kspace)
+        kspace = tf.cast(mask, kspace.dtype) * kspace
         kspace, image = scale_tensors(kspace, image, scale_factor=self.scale_factor)
         kspace = kspace[..., None]
         image = image[..., None]
