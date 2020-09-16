@@ -2,6 +2,7 @@ import tensorflow as tf
 
 from tf_fastmri_data.dataset_builder import FastMRIDatasetBuilder
 from tf_fastmri_data.preprocessing_utils.extract_smaps import extract_smaps
+from tf_fastmri_data.preprocessing_utils.fourier.cartesian import ortho_ifft2d
 from tf_fastmri_data.preprocessing_utils.masking import mask_random, mask_equidistant, mask_reshaping_and_casting
 from tf_fastmri_data.preprocessing_utils.scaling import scale_tensors
 
@@ -62,6 +63,10 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
     def _preprocessing_train(self, kspace, image, _contrast):
         mask = self.gen_mask(kspace)
         kspace = tf.cast(mask, kspace.dtype) * kspace
+        if self.kspace_size[0] < 640 or (self.same_size_kspace and self.batch_size is not None):
+            image = ortho_ifft2d(kspace)
+            # TODO: handle multicoil here potentially
+            image = tf.abs(image)
         kspace, image = scale_tensors(kspace, image, scale_factor=self.scale_factor)
         kspace = kspace[..., None]
         image = image[..., None]
