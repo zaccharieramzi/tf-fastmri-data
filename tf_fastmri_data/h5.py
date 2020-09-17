@@ -8,6 +8,7 @@ def load_data_from_file(filename, slice_random=False, no_kspace=False, kspace_si
     with h5py.File(filename, 'r') as h5_obj:
         if no_kspace:
             kspace = None
+            crop_phase = None
         else:
             kspace = h5_obj['kspace']
             shape = kspace.shape
