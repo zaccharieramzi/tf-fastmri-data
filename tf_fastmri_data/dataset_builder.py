@@ -5,7 +5,7 @@ import tensorflow as tf
 
 from .config import FASTMRI_DATA_DIR, PATHS_MAP
 from .h5 import load_data_from_file as h5_load
-
+from tf_fastmri_data.preprocessing_utils.size_adjustment import pad, crop
 
 def _convert_to_tensors(*args):
     return [tf.convert_to_tensor(arg) for arg in args]
@@ -28,6 +28,7 @@ class FastMRIDatasetBuilder:
             prefetch=True,
             no_kspace=False,
             batch_size=None,
+            kspace_size=(640, 372),
         ):
         self.dataset = dataset
         self._check_dataset()
@@ -51,12 +52,14 @@ class FastMRIDatasetBuilder:
         self.repeat = repeat
         self.n_samples = n_samples
         self.prefetch = prefetch
-        self.no_kspace = no_kspace
+        self._no_kspace = no_kspace
         self.batch_size = batch_size
+        self.kspace_size = kspace_size
         if self.batch_size is not None and not self.slice_random:
             raise ValueError('You can only use batching when selecting one slice')
         if self.slice_random and self.batch_size is None:
             self.batch_size = 1
+        self.set_kspace_same_size()
         self.files_ds = tf.data.Dataset.list_files(str(self.path) + '/*.h5', shuffle=False)
         if self.shuffle:
             self.files_ds = self.files_ds.shuffle(
@@ -87,6 +90,11 @@ class FastMRIDatasetBuilder:
         )
         self._filtered_ds = self._raw_ds.filter(self.filter_condition)
         if self.batch_size is not None:
+            if self.same_size_kspace:
+                self._filtered_ds = self._filtered_ds.map(
+                    self.pad_crop_kspace,
+                    num_parallel_calls=self.num_parallel_calls,
+                )
             self._filtered_ds = self._filtered_ds.batch(self.batch_size)
         self._preprocessed_ds = self._filtered_ds.map(
             self.preprocessing,
@@ -118,6 +126,18 @@ class FastMRIDatasetBuilder:
             self._build_datasets()
         return self._preprocessed_ds
 
+    @property
+    def no_kspace(self):
+        return self._no_kspace
+
+    def set_kspace_same_size(self):
+        self.same_size_kspace = self.batch_size is None or (self.batch_size > 1 and not self._no_kspace)
+
+    @no_kspace.setter
+    def no_kspace(self, val):
+        self._no_kspace = val
+        self.set_kspace_same_size()
+
     def preprocessing(self, *data_tensors):
         raise NotImplementedError('You must implement a preprocessing function')
 
@@ -128,6 +148,7 @@ class FastMRIDatasetBuilder:
                 filename_str,
                 slice_random=self.slice_random,
                 no_kspace=self.no_kspace,
+                kspace_size=self.kspace_size,
             )
             if self.mode == 'train':
                 if self.no_kspace:
@@ -168,6 +189,18 @@ class FastMRIDatasetBuilder:
         elif self.mode == 'test':
             mask.set_shape([None])
             return kspace, mask, contrast, af, output_shape
+
+    def pad_crop_kspace(self, *data_tensors):
+        kspace, *others = data_tensors
+        # NOTE: for now only doing it for the last dimension
+        shape = tf.shape(kspace)[-1]
+        kspace_adapted = tf.cond(
+            tf.math.greater(shape, self.kspace_size[-1]),
+            lambda: crop(kspace, self.kspace_size),
+            lambda: pad(kspace, self.kspace_size),
+        )
+        outputs = [kspace_adapted] + others
+        return outputs
 
     def filter_condition(self, *data_tensors):
         if self.mode == 'train':

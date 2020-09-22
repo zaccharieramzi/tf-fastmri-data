@@ -36,7 +36,7 @@ def test_noisy_dataset_train(create_full_fastmri_test_tmp_dataset, contrast, sli
 @pytest.mark.parametrize('noise_input', [True, False])
 @pytest.mark.parametrize('noise_power', [30, (0, 50)])
 @pytest.mark.parametrize('noise_mode', ['uniform', 'gaussian'])
-@pytest.mark.parametrize('batch_size', [None])
+@pytest.mark.parametrize('batch_size', [None, 2])
 def test_complex_noisy_dataset_train(create_full_fastmri_test_tmp_dataset, contrast, slice_random, noise_input, noise_power, noise_mode, batch_size):
     if not (noise_mode == 'gaussian' and isinstance(noise_power, tuple)) and not (batch_size and not slice_random):
         path = create_full_fastmri_test_tmp_dataset['fastmri_tmp_singlecoil_train']
@@ -50,8 +50,12 @@ def test_complex_noisy_dataset_train(create_full_fastmri_test_tmp_dataset, contr
             batch_size=batch_size,
         )
         (image_noisy, *_others), model_outputs = next(ds.preprocessed_ds.as_numpy_iterator())
-        np.testing.assert_equal(model_outputs.shape[-3:], kspace_shape[1:])
-        np.testing.assert_equal(image_noisy.shape[-3:], kspace_shape[1:])
+        if not (batch_size == 2 and slice_random):
+            np.testing.assert_equal(model_outputs.shape[-3:], kspace_shape[1:])
+            np.testing.assert_equal(image_noisy.shape[-3:], kspace_shape[1:])
+        else:
+            assert model_outputs.shape[-2] == 372
+            assert image_noisy.shape[-2] == 372
         np.testing.assert_equal(image_noisy.ndim, 4)
         assert image_noisy.dtype == np.complex64
         np.testing.assert_equal(model_outputs.ndim, 4)
