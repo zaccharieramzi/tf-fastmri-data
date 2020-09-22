@@ -149,6 +149,8 @@ class FastMRIDatasetBuilder:
                 slice_random=self.slice_random,
                 no_kspace=self.no_kspace,
                 kspace_size=self.kspace_size,
+                filter_contrast=self.contrast,
+                filter_acceleration_factor=self.af,
             )
             if self.mode == 'train':
                 if self.no_kspace:
