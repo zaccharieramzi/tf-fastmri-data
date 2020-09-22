@@ -4,8 +4,23 @@ import h5py
 import ismrmrd
 
 
-def load_data_from_file(filename, slice_random=False, no_kspace=False, kspace_size=None):
+def load_data_from_file(
+        filename,
+        slice_random=False,
+        no_kspace=False,
+        kspace_size=None,
+        filter_contrast=None,
+        filter_acceleration_factor=None,
+    ):
     with h5py.File(filename, 'r') as h5_obj:
+        contrast = h5_obj.attrs['acquisition']
+        acceleration_factor = h5_obj.attrs.get('acceleration')
+        need_filtering = filter_contrast is not None or filter_acceleration_factor is not None
+        if need_filtering:
+            contrast_ok = filter_contrast is None or filter_contrast == contrast
+            accel_ok = filter_acceleration_factor is None or acceleration_factor is None or filter_acceleration_factor == acceleration_factor
+            if not (contrast_ok and accel_ok):
+                return None, None, None, contrast, acceleration_factor, None
         if no_kspace:
             kspace = None
             crop_phase = None
@@ -34,8 +49,6 @@ def load_data_from_file(filename, slice_random=False, no_kspace=False, kspace_si
             mask = mask[()].astype('bool')
         ismrmrd_header = h5_obj['ismrmrd_header'][()]
         output_shape = _get_output_shape(ismrmrd_header)
-        contrast = h5_obj.attrs['acquisition']
-        acceleration_factor = h5_obj.attrs.get('acceleration')
         return kspace, image, mask, contrast, acceleration_factor, output_shape
 
 def _slice_selection(kspace, image, crop_phase=None):
