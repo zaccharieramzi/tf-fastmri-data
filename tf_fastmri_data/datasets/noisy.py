@@ -14,6 +14,7 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             noise_mode='uniform',
             residual_learning=False,
             normal_noise_output=False,
+            image_size=320,
             **kwargs,
         ):
         self.scale_factor = scale_factor
@@ -22,6 +23,7 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         self.noise_mode = noise_mode
         self.residual_learning = residual_learning
         self.normal_noise_output = normal_noise_output
+        self.image_size = image_size
         super(NoisyFastMRIDatasetBuilder, self).__init__(
             no_kspace=True,
             **kwargs,
@@ -30,8 +32,10 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             raise NotImplementedError('Noisy dataset only works for train/val')
 
     def _preprocessing_train(self, _kspace, image, _contrast):
-        image = scale_tensors(image, scale_factor=self.scale_factor)[0]
         image = image[..., None]
+        if self.image_size != 320:
+            image = tf.image.resize(image, [self.image_size, self.image_size])
+        image = scale_tensors(image, scale_factor=self.scale_factor)[0]
         noise_power = self.draw_noise_power(batch_size=tf.shape(image)[0])
         normal_noise = tf.random.normal(
             shape=tf.shape(image),
