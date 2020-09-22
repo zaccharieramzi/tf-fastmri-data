@@ -32,7 +32,7 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             raise NotImplementedError('Noisy dataset only works for train/val')
 
     def _preprocessing_train(self, _kspace, image, _contrast):
-        if self.image_size == 320:
+        if self.image_size != 320:
             image = tf.image.resize(image, [self.image_size, self.image_size])
         image = scale_tensors(image, scale_factor=self.scale_factor)[0]
         image = image[..., None]
