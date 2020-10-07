@@ -96,15 +96,15 @@ class ComplexNoisyFastMRIDatasetBuilder(NoisyFastMRIDatasetBuilder):
         orig_prebuild = kwargs.get('prebuild', True)
         kwargs.update(dict(prebuild=False))
         super(ComplexNoisyFastMRIDatasetBuilder, self).__init__(
+            complex_image=True,
             **kwargs,
         )
         self.no_kspace = False
         if orig_prebuild:
             self._build_datasets()
 
-    def _preprocessing_train(self, _image, kspace):
-        kspace = scale_tensors(kspace, scale_factor=self.scale_factor)[0]
-        image = ortho_ifft2d(kspace)
+    def _preprocessing_train(self, image):
+        image = scale_tensors(image, scale_factor=self.scale_factor)[0]
         image = image[..., None]
         noise_power = self.draw_noise_power(batch_size=tf.shape(image)[0])
         normal_noise = tf.random.normal(
