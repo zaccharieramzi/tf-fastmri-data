@@ -20,6 +20,7 @@ def test_cartesian_dataset_train(create_full_fastmri_test_tmp_dataset, mask_mode
     ds = CartesianFastMRIDatasetBuilder(
         path=path,
         mask_mode=mask_mode,
+        brain=output_shape_spec,
         output_shape_spec=output_shape_spec,
         multicoil=multicoil,
         contrast=contrast,
