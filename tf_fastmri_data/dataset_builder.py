@@ -155,27 +155,6 @@ class FastMRIDatasetBuilder:
     def preprocessing(self, *data_tensors):
         raise NotImplementedError('You must implement a preprocessing function')
 
-    def _set_tensor_shapes(self, *data_tensors):
-        if self.mode == 'train':
-            kspace, image, contrast = data_tensors
-        elif self.mode == 'test':
-            kspace, mask, contrast, af, output_shape = data_tensors
-        kspace_size = [None] * 2
-        if not self.slice_random:
-            kspace_size.append(None)
-        if self.multicoil:
-            kspace_size.append(None)
-        kspace.set_shape(kspace_size)
-        if self.mode == 'train':
-            image_size = [None] * 2
-            if not self.slice_random:
-                image_size.append(None)
-            image.set_shape(image_size)
-            return kspace, image, contrast
-        elif self.mode == 'test':
-            mask.set_shape([None])
-            return kspace, mask, contrast, af, output_shape
-
     def pad_crop_kspace(self, *data_tensors):
         kspace, *others = data_tensors
         # NOTE: for now only doing it for the last dimension
