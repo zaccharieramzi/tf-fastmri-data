@@ -1,5 +1,3 @@
-import random
-
 import h5py
 import ismrmrd
 import tensorflow as tf
