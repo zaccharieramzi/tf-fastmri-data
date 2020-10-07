@@ -1,10 +1,10 @@
+from functools import partial
 from pathlib import Path
 
-import numpy as np
 import tensorflow as tf
 
 from .config import FASTMRI_DATA_DIR, PATHS_MAP
-from .h5 import load_data_from_file as h5_load
+from .h5 import load_data_from_file as load_data_from_file, load_metadata_from_file
 from tf_fastmri_data.preprocessing_utils.size_adjustment import pad, crop
 
 def _convert_to_tensors(*args):
@@ -29,6 +29,7 @@ class FastMRIDatasetBuilder:
             no_kspace=False,
             batch_size=None,
             kspace_size=(640, 372),
+            # WARNING: for now not working
         ):
         self.dataset = dataset
         self._check_dataset()
@@ -59,8 +60,13 @@ class FastMRIDatasetBuilder:
             raise ValueError('You can only use batching when selecting one slice')
         if self.slice_random and self.batch_size is None:
             self.batch_size = 1
-        self.set_kspace_same_size()
-        self.files_ds = tf.data.Dataset.list_files(str(self.path) + '/*.h5', shuffle=False)
+        # self.set_kspace_same_size()
+        self._files = sorted(self.path.glob('*.h5'))
+        self.filtered_files = [
+            f for f in self._files
+            if self.filter_condition(*load_metadata_from_file(f))
+        ]
+        self.files_ds = tf.data.Dataset.from_tensor_slices(self.filtered_files)
         if self.shuffle:
             self.files_ds = self.files_ds.shuffle(
                 buffer_size=1000,
@@ -84,17 +90,23 @@ class FastMRIDatasetBuilder:
         return path_default
 
     def _build_datasets(self):
-        self._raw_ds = self.files_ds.interleave(
-            lambda x: tf.data.Dataset.from_tensors(tuple(self.load_data(x))),
+        self._raw_ds = self.files_ds.map(
+            partial(
+                load_data_from_file,
+                slice_random=self.slice_random,
+                no_kspace=self.no_kspace,
+                multicoil=self.multicoil,
+                mode=self.mode,
+            ),
             num_parallel_calls=self.num_parallel_calls,
         )
-        self._filtered_ds = self._raw_ds.filter(self.filter_condition)
+        # TODO: add the output_shape for brain ds
         if self.batch_size is not None:
-            if self.same_size_kspace:
-                self._filtered_ds = self._filtered_ds.map(
-                    self.pad_crop_kspace,
-                    num_parallel_calls=self.num_parallel_calls,
-                )
+            # if self.same_size_kspace:
+            #     self._filtered_ds = self._filtered_ds.map(
+            #         self.pad_crop_kspace,
+            #         num_parallel_calls=self.num_parallel_calls,
+            #     )
             self._filtered_ds = self._filtered_ds.batch(self.batch_size)
         self._preprocessed_ds = self._filtered_ds.map(
             self.preprocessing,
@@ -141,34 +153,6 @@ class FastMRIDatasetBuilder:
     def preprocessing(self, *data_tensors):
         raise NotImplementedError('You must implement a preprocessing function')
 
-    def load_data(self, filename):
-        def _load_data(filename):
-            filename_str = filename.numpy()
-            kspace, image, mask, contrast, af, output_shape = h5_load(
-                filename_str,
-                slice_random=self.slice_random,
-                no_kspace=self.no_kspace,
-                kspace_size=self.kspace_size,
-            )
-            if self.mode == 'train':
-                if self.no_kspace:
-                    kspace = np.zeros_like(image, dtype=np.complex64)
-                outputs = (kspace, image, contrast)
-            elif self.mode == 'test':
-                outputs = (kspace, mask, contrast, af, output_shape)
-            return _convert_to_tensors(*outputs)
-        if self.mode == 'train':
-            output_types = [tf.complex64, tf.float32, tf.string]
-        elif self.mode == 'test':
-            output_types = [tf.complex64, tf.bool, tf.string, tf.int64, tf.int32]
-        data_tensors = tf.py_function(
-            _load_data,
-            [filename],
-            output_types,
-        )
-        self._set_tensor_shapes(*data_tensors)
-        return data_tensors
-
     def _set_tensor_shapes(self, *data_tensors):
         if self.mode == 'train':
             kspace, image, contrast = data_tensors
@@ -202,16 +186,14 @@ class FastMRIDatasetBuilder:
         outputs = [kspace_adapted] + others
         return outputs
 
-    def filter_condition(self, *data_tensors):
+    def filter_condition(self, contrast, af=None):
         if self.mode == 'train':
-            _, _, contrast = data_tensors
             if self.contrast is None:
                 return True
             else:
                 condition = contrast == self.contrast
                 return condition
         elif self.mode == 'test':
-            _, _, contrast, af, _ = data_tensors
             condition = af == self.af
             if self.contrast is not None:
                 condition = condition and contrast == self.contrast
