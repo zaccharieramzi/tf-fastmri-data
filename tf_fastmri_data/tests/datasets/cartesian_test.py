@@ -46,6 +46,7 @@ def test_cartesian_dataset_test(create_full_fastmri_test_tmp_dataset, mask_mode,
         path=path,
         mask_mode=mask_mode,
         output_shape_spec=output_shape_spec,
+        brain=output_shape_spec,
         multicoil=multicoil,
         contrast=contrast,
     )
