@@ -5,6 +5,8 @@ import tensorflow as tf
 
 from .config import FASTMRI_DATA_DIR, PATHS_MAP
 from .h5 import load_data_from_file as load_data_from_file, load_metadata_from_file, load_output_shape_from_file
+from tf_fastmri_data.preprocessing_utils.fourier.cartesian import ortho_ifft2d
+from tf_fastmri_data.preprocessing_utils.size_adjustment import crop
 
 
 class FastMRIDatasetBuilder:
@@ -24,6 +26,7 @@ class FastMRIDatasetBuilder:
             n_samples=None,
             prefetch=True,
             no_kspace=False,
+            complex_image=False,
             batch_size=None,
         ):
         self.dataset = dataset
@@ -49,6 +52,7 @@ class FastMRIDatasetBuilder:
         self.n_samples = n_samples
         self.prefetch = prefetch
         self.no_kspace = no_kspace
+        self.complex_image = complex_image
         self.batch_size = batch_size
         if self.batch_size is not None and not self.slice_random:
             raise ValueError('You can only use batching when selecting one slice')
@@ -95,6 +99,12 @@ class FastMRIDatasetBuilder:
             ),
             num_parallel_calls=self.num_parallel_calls,
         )
+        if self.complex_image:
+            # you can only ask complex image if you ask for kspace
+            # for now also available only for knee images (320 x 320)
+            self._raw_ds = self._raw_ds.map(
+                lambda _, kspace: crop(ortho_ifft2d(kspace), 320)
+            )
         if self.brain:
             output_shape_ds = tf.data.Dataset.from_tensor_slices(
                 [load_output_shape_from_file(f) for f in self.filtered_files],
