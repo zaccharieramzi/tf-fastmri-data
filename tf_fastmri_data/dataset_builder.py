@@ -66,7 +66,9 @@ class FastMRIDatasetBuilder:
             f for f in self._files
             if self.filter_condition(*load_metadata_from_file(f))
         ]
-        self.files_ds = tf.data.Dataset.from_tensor_slices(self.filtered_files)
+        self.files_ds = tf.data.Dataset.from_tensor_slices(
+            [str(f) for f in self.filtered_files],
+        )
         if self.shuffle:
             self.files_ds = self.files_ds.shuffle(
                 buffer_size=1000,
@@ -107,8 +109,8 @@ class FastMRIDatasetBuilder:
             #         self.pad_crop_kspace,
             #         num_parallel_calls=self.num_parallel_calls,
             #     )
-            self._filtered_ds = self._filtered_ds.batch(self.batch_size)
-        self._preprocessed_ds = self._filtered_ds.map(
+            self._raw_ds = self._raw_ds.batch(self.batch_size)
+        self._preprocessed_ds = self._raw_ds.map(
             self.preprocessing,
             num_parallel_calls=self.num_parallel_calls,
         )
