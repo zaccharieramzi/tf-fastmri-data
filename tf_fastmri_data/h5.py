@@ -50,7 +50,7 @@ def load_data_from_file(fpath, slice_random=False, no_kspace=False, multicoil=Fa
         image.set_shape(image_shape)
         outputs = [image]
     else:
-        mask = h5_tensors(mask_name)
+        mask = h5_tensors(mask_name)[:]
         mask.set_shape(mask_shape)
         outputs = [mask]
     if not no_kspace:
