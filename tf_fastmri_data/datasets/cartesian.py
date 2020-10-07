@@ -60,7 +60,7 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         )
         return mask
 
-    def _preprocessing_train(self, kspace, image, _contrast):
+    def _preprocessing_train(self, image, kspace, output_shape=None):
         if self.kspace_size[0] < 640 or (self.same_size_kspace and self.batch_size is not None):
             image = ortho_ifft2d(kspace)
             # TODO: handle multicoil here potentially
@@ -80,7 +80,7 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             model_inputs += (output_shape,)
         return model_inputs, image
 
-    def _preprocessing_test(self, kspace, mask, _contrast, _af, output_shape):
+    def _preprocessing_test(self, mask, kspace, output_shape=None):
         (kspace,) = scale_tensors(kspace, scale_factor=self.scale_factor)
         kspace = kspace[..., None]
         mask = mask_reshaping_and_casting(mask, tf.shape(kspace[..., 0]), multicoil=self.multicoil)

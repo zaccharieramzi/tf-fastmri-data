@@ -66,7 +66,7 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             traj = get_spiral_trajectory(self.image_size, af=self.af)
         return traj
 
-    def preprocessing(self, kspace, image, _contrast):
+    def preprocessing(self, image, kspace):
         traj = self.generate_trajectory()
         interpob = self.nfft_obj._extract_nufft_interpob()
         nufftob_forw = kbnufft_forward(interpob)

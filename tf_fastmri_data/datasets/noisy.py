@@ -31,7 +31,7 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         if self.mode == 'test':
             raise NotImplementedError('Noisy dataset only works for train/val')
 
-    def _preprocessing_train(self, _kspace, image, _contrast):
+    def _preprocessing_train(self, image):
         image = image[..., None]
         if self.image_size != 320:
             image = tf.image.resize(image, [self.image_size, self.image_size])
@@ -102,7 +102,7 @@ class ComplexNoisyFastMRIDatasetBuilder(NoisyFastMRIDatasetBuilder):
         if orig_prebuild:
             self._build_datasets()
 
-    def _preprocessing_train(self, kspace, _image, _contrast):
+    def _preprocessing_train(self, _image, kspace):
         kspace = scale_tensors(kspace, scale_factor=self.scale_factor)[0]
         image = ortho_ifft2d(kspace)
         image = image[..., None]
