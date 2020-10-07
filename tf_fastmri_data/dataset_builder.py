@@ -56,8 +56,6 @@ class FastMRIDatasetBuilder:
         self.batch_size = batch_size
         if self.batch_size is not None and not self.slice_random:
             raise ValueError('You can only use batching when selecting one slice')
-        if self.slice_random and self.batch_size is None:
-            self.batch_size = 1
         self._files = sorted(self.path.glob('*.h5'))
         self.filtered_files = [
             f for f in self._files
@@ -110,7 +108,10 @@ class FastMRIDatasetBuilder:
                 [load_output_shape_from_file(f) for f in self.filtered_files],
             )
             self._raw_ds = tf.data.Dataset.zip(
-                [self._raw_ds, output_shape_ds]
+                (self._raw_ds, output_shape_ds)
+            )
+            self._raw_ds = self._raw_ds.map(
+                lambda tensors, output_shape: (*tensors, output_shape)
             )
         if self.batch_size is not None:
             self._raw_ds = self._raw_ds.batch(self.batch_size)
