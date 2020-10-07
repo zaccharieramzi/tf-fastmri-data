@@ -4,7 +4,7 @@ from pathlib import Path
 import tensorflow as tf
 
 from .config import FASTMRI_DATA_DIR, PATHS_MAP
-from .h5 import load_data_from_file as load_data_from_file, load_metadata_from_file
+from .h5 import load_data_from_file as load_data_from_file, load_metadata_from_file, load_output_shape_from_file
 from tf_fastmri_data.preprocessing_utils.size_adjustment import pad, crop
 
 def _convert_to_tensors(*args):
@@ -102,6 +102,13 @@ class FastMRIDatasetBuilder:
             ),
             num_parallel_calls=self.num_parallel_calls,
         )
+        if self.brain:
+            output_shape_ds = tf.data.Dataset.from_tensor_slices(
+                [load_output_shape_from_file(f) for f in self.filtered_files],
+            )
+            self._raw_ds = tf.data.Dataset.zip(
+                [self._raw_ds, output_shape_ds]
+            )
         # TODO: add the output_shape for brain ds
         if self.batch_size is not None:
             # if self.same_size_kspace:
@@ -127,12 +134,6 @@ class FastMRIDatasetBuilder:
         if not self.built:
             self._build_datasets()
         return self._raw_ds
-
-    @property
-    def filtered_ds(self):
-        if not self.built:
-            self._build_datasets()
-        return self._filtered_ds
 
     @property
     def preprocessed_ds(self):
