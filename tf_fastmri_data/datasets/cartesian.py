@@ -1,4 +1,5 @@
 import tensorflow as tf
+import tensorflow_io as tfio
 
 from tf_fastmri_data.dataset_builder import FastMRIDatasetBuilder
 from tf_fastmri_data.preprocessing_utils.extract_smaps import extract_smaps
@@ -21,6 +22,12 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         if self.dataset in ['train', 'val']:
             kwargs.update(prefetch=True)
         elif self.dataset in ['test']:
+            if tfio.__version__ < (1, 5, 0):
+                raise ValueError(
+                    '''Test cartesian dataset is not available for
+                    tfio under 1.5.0 because it cannot handle boolean data,
+                    see https://github.com/tensorflow/io/issues/1144'''
+                )
             kwargs.update(repeat=False, prefetch=False)
         self.brain = brain
         if mask_mode is None:
