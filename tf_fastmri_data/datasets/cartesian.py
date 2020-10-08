@@ -22,7 +22,7 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         if self.dataset in ['train', 'val']:
             kwargs.update(prefetch=True)
         elif self.dataset in ['test']:
-            if tfio.__version__ <= (1, 5, 0):
+            if tfio.__versioninfo__ <= (1, 5, 0):
                 raise ValueError(
                     '''Test cartesian dataset is not available for
                     tfio under 1.5.0 because it cannot handle boolean data,
