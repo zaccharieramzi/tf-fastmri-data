@@ -13,7 +13,7 @@ def pad(x, size):
 
 
 def crop(x, size):
-    shape = tf.shape(x)[-1]
-    to_crop = shape - size[-1]
-    cropped_x = x[..., to_crop//2:-to_crop//2]
+    shape = tf.shape(x)[-2:]
+    to_crop = shape - size
+    cropped_x = x[..., to_crop[0]//2:-to_crop[0]//2, to_crop[1]//2:-to_crop[1]//2]
     return cropped_x

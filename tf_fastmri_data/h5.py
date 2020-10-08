@@ -1,58 +1,82 @@
-import random
-
 import h5py
 import ismrmrd
+import tensorflow as tf
+import tensorflow_io as tfio
 
 
-def load_data_from_file(filename, slice_random=False, no_kspace=False, kspace_size=None):
-    with h5py.File(filename, 'r') as h5_obj:
-        if no_kspace:
-            kspace = None
-            crop_phase = None
-        else:
-            kspace = h5_obj['kspace']
-            shape = kspace.shape
-            if kspace_size is not None and kspace_size[0] < shape[-2]:
-                crop_phase = shape[-2] - kspace_size[0]
-            else:
-                crop_phase = None
-        if 'reconstruction_esc' in h5_obj.keys():
-            image = h5_obj['reconstruction_esc']
-        elif 'reconstruction_rss' in h5_obj.keys():
-            image = h5_obj['reconstruction_rss']
-        else:
-            image = None
+def load_data_from_file(fpath, slice_random=False, no_kspace=False, multicoil=False, mode='train'):
+    if multicoil:
+        image_name = '/reconstruction_rss'
+        kspace_shape = tuple([None]*4)
+    else:
+        image_name = '/reconstruction_esc'
+        kspace_shape = tuple([None]*3)
+    image_shape = tuple([None]*3)
+    if slice_random:
+        kspace_shape = kspace_shape[1:]
+        image_shape = image_shape[1:]
+    mask_shape = (None,)
+    kspace_name = '/kspace'
+    mask_name = '/mask'
+    spec = {}
+    if mode == 'train':
+        spec.update({
+            image_name: tf.TensorSpec(shape=image_shape, dtype=tf.float32),
+        })
+    else:
+        spec.update({
+            mask_name: tf.TensorSpec(shape=mask_shape, dtype=tf.bool),
+        })
+    if not no_kspace:
+        spec.update({
+            kspace_name: tf.TensorSpec(shape=kspace_shape, dtype=tf.complex64),
+        })
+    h5_tensors = tfio.IOTensor.from_hdf5(fpath, spec=spec)
+    if no_kspace:
+        main_tensor = image_name
+    else:
+        main_tensor = kspace_name
+    h5_main = h5_tensors(main_tensor)
+    n_slices = h5_main.shape[0]
+    if slice_random:
+        i_slice = tf.random.uniform(
+            shape=(),
+            minval=0,
+            maxval=n_slices,
+            dtype=tf.int64,
+        )
+        slices = (i_slice, i_slice + 1)
+    else:
+        slices = (0, n_slices)
+    if mode == 'train':
+        image = h5_tensors(image_name)[slices[0]:slices[1]]
         if slice_random:
-            kspace, image = _slice_selection(kspace, image, crop_phase=crop_phase)
-        else:
-            if kspace is not None:
-                kspace = kspace[()]
-            if image is not None:
-                image = image[()]
-        mask = h5_obj.get('mask', None)
-        if mask is not None:
-            mask = mask[()].astype('bool')
-        ismrmrd_header = h5_obj['ismrmrd_header'][()]
-        output_shape = _get_output_shape(ismrmrd_header)
+            image = tf.squeeze(image, axis=0)
+        image.set_shape(image_shape)
+        outputs = [image]
+    else:
+        mask = h5_tensors(mask_name)[:]
+        mask.set_shape(mask_shape)
+        outputs = [mask]
+    if not no_kspace:
+        kspace = h5_tensors(kspace_name)[slices[0]:slices[1]]
+        if slice_random:
+            kspace = tf.squeeze(kspace, axis=0)
+        kspace.set_shape(kspace_shape)
+        outputs.append(kspace)
+    return outputs
+
+def load_metadata_from_file(filename):
+    with h5py.File(filename, 'r') as h5_obj:
         contrast = h5_obj.attrs['acquisition']
         acceleration_factor = h5_obj.attrs.get('acceleration')
-        return kspace, image, mask, contrast, acceleration_factor, output_shape
+        return contrast, acceleration_factor
 
-def _slice_selection(kspace, image, crop_phase=None):
-    if kspace is not None:
-        base_tensor = kspace
-    else:
-        base_tensor = image
-    i_max = base_tensor.shape[0] - 1
-    i_slice = random.randint(0, i_max)
-    if kspace is not None:
-        if crop_phase is not None:
-            kspace = kspace[i_slice, crop_phase//2:-crop_phase//2]
-        else:
-            kspace = kspace[i_slice]
-    if image is not None:
-        image = image[i_slice]
-    return kspace, image
+def load_output_shape_from_file(filename):
+    with h5py.File(filename, 'r') as h5_obj:
+        ismrmrd_header = h5_obj['ismrmrd_header'][()]
+        output_shape = _get_output_shape(ismrmrd_header)
+        return output_shape
 
 def _get_output_shape(ismrmrd_header):
     hdr = ismrmrd.xsd.CreateFromDocument(ismrmrd_header)

@@ -51,11 +51,12 @@ def test_complex_noisy_dataset_train(create_full_fastmri_test_tmp_dataset, contr
         )
         (image_noisy, *_others), model_outputs = next(ds.preprocessed_ds.as_numpy_iterator())
         if not (batch_size == 2 and slice_random):
-            np.testing.assert_equal(model_outputs.shape[-3:], kspace_shape[1:])
-            np.testing.assert_equal(image_noisy.shape[-3:], kspace_shape[1:])
+            # NOTE: for now complex images can only be of size 320 x 320
+            np.testing.assert_equal(model_outputs.shape[-3:], (320, 320, 1))
+            np.testing.assert_equal(image_noisy.shape[-3:], (320, 320, 1))
         else:
-            assert model_outputs.shape[-2] == 372
-            assert image_noisy.shape[-2] == 372
+            assert model_outputs.shape[-2] == 320
+            assert image_noisy.shape[-2] == 320
         np.testing.assert_equal(image_noisy.ndim, 4)
         assert image_noisy.dtype == np.complex64
         np.testing.assert_equal(model_outputs.ndim, 4)

@@ -1,5 +1,8 @@
+from contextlib import ExitStack
+
 import numpy as np
 import pytest
+import tensorflow_io as tfio
 
 from tf_fastmri_data.datasets.cartesian import CartesianFastMRIDatasetBuilder
 
@@ -20,6 +23,7 @@ def test_cartesian_dataset_train(create_full_fastmri_test_tmp_dataset, mask_mode
     ds = CartesianFastMRIDatasetBuilder(
         path=path,
         mask_mode=mask_mode,
+        brain=output_shape_spec,
         output_shape_spec=output_shape_spec,
         multicoil=multicoil,
         contrast=contrast,
@@ -40,14 +44,20 @@ def test_cartesian_dataset_test(create_full_fastmri_test_tmp_dataset, mask_mode,
         path = create_full_fastmri_test_tmp_dataset['fastmri_tmp_multicoil_test']
     else:
         path = create_full_fastmri_test_tmp_dataset['fastmri_tmp_singlecoil_test']
-    ds = CartesianFastMRIDatasetBuilder(
-        dataset='test',
-        path=path,
-        mask_mode=mask_mode,
-        output_shape_spec=output_shape_spec,
-        multicoil=multicoil,
-        contrast=contrast,
-    )
-    kspace, mask, *_others = next(ds.preprocessed_ds.as_numpy_iterator())
-    np.testing.assert_equal(kspace.shape[-3:], kspace_shape[1:])
-    np.testing.assert_equal(mask.shape[-2:], [1, kspace_shape[-2]])
+    tfio_version_flag = tuple(int(v) for v in tfio.__version__.split('.')) <= (0, 15, 0)
+    with ExitStack() as stack:
+        if tfio_version_flag:
+            stack.enter_context(pytest.raises(ValueError))
+        ds = CartesianFastMRIDatasetBuilder(
+            dataset='test',
+            path=path,
+            mask_mode=mask_mode,
+            output_shape_spec=output_shape_spec,
+            brain=output_shape_spec,
+            multicoil=multicoil,
+            contrast=contrast,
+        )
+    if not tfio_version_flag:
+        kspace, mask, *_others = next(ds.preprocessed_ds.as_numpy_iterator())
+        np.testing.assert_equal(kspace.shape[-3:], kspace_shape[1:])
+        np.testing.assert_equal(mask.shape[-2:], [1, kspace_shape[-2]])

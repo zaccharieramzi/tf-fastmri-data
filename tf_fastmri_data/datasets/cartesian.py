@@ -1,4 +1,5 @@
 import tensorflow as tf
+import tensorflow_io as tfio
 
 from tf_fastmri_data.dataset_builder import FastMRIDatasetBuilder
 from tf_fastmri_data.preprocessing_utils.extract_smaps import extract_smaps
@@ -21,6 +22,12 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         if self.dataset in ['train', 'val']:
             kwargs.update(prefetch=True)
         elif self.dataset in ['test']:
+            if tuple(int(v) for v in tfio.__version__.split('.')) <= (0, 15, 0):
+                raise ValueError(
+                    '''Test cartesian dataset is not available for
+                    tfio under 1.5.0 because it cannot handle boolean data,
+                    see https://github.com/tensorflow/io/issues/1144'''
+                )
             kwargs.update(repeat=False, prefetch=False)
         self.brain = brain
         if mask_mode is None:
@@ -60,11 +67,7 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         )
         return mask
 
-    def _preprocessing_train(self, kspace, image, _contrast):
-        if self.kspace_size[0] < 640 or (self.same_size_kspace and self.batch_size is not None):
-            image = ortho_ifft2d(kspace)
-            # TODO: handle multicoil here potentially
-            image = tf.abs(image)
+    def _preprocessing_train(self, image, kspace, output_shape=None):
         mask = self.gen_mask(kspace)
         kspace = tf.cast(mask, kspace.dtype) * kspace
         kspace, image = scale_tensors(kspace, image, scale_factor=self.scale_factor)
@@ -80,7 +83,7 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             model_inputs += (output_shape,)
         return model_inputs, image
 
-    def _preprocessing_test(self, kspace, mask, _contrast, _af, output_shape):
+    def _preprocessing_test(self, mask, kspace, output_shape=None):
         (kspace,) = scale_tensors(kspace, scale_factor=self.scale_factor)
         kspace = kspace[..., None]
         mask = mask_reshaping_and_casting(mask, tf.shape(kspace[..., 0]), multicoil=self.multicoil)
