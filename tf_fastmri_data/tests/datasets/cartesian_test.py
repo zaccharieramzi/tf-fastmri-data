@@ -44,7 +44,7 @@ def test_cartesian_dataset_test(create_full_fastmri_test_tmp_dataset, mask_mode,
         path = create_full_fastmri_test_tmp_dataset['fastmri_tmp_multicoil_test']
     else:
         path = create_full_fastmri_test_tmp_dataset['fastmri_tmp_singlecoil_test']
-    tfio_version_flag = tuple(int(v) for v in tfio.__version__.split('.')) <= (1, 5, 0)
+    tfio_version_flag = tuple(int(v) for v in tfio.__version__.split('.')) <= (0, 15, 0)
     with ExitStack() as stack:
         if tfio_version_flag:
             stack.enter_context(pytest.raises(ValueError))
