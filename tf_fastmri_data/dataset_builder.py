@@ -61,6 +61,12 @@ class FastMRIDatasetBuilder:
             f for f in self._files
             if self.filter_condition(*load_metadata_from_file(f))
         ]
+        if not self.filtered_files:
+            raise ValueError(
+                f'''No files for this contrast ({self.contrast}) and
+                acceleration factor ({self.accel_factor})
+                found at this path {self.path}'''
+            )
         self.files_ds = tf.data.Dataset.from_tensor_slices(
             [str(f) for f in self.filtered_files],
         )
