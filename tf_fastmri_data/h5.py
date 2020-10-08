@@ -12,6 +12,9 @@ def load_data_from_file(fpath, slice_random=False, no_kspace=False, multicoil=Fa
         image_name = '/reconstruction_esc'
         kspace_shape = tuple([None]*3)
     image_shape = tuple([None]*3)
+    if slice_random:
+        kspace_shape = kspace_shape[1:]
+        image_shape = image_shape[1:]
     mask_shape = (None,)
     kspace_name = '/kspace'
     mask_name = '/mask'
@@ -47,6 +50,8 @@ def load_data_from_file(fpath, slice_random=False, no_kspace=False, multicoil=Fa
         slices = (0, n_slices)
     if mode == 'train':
         image = h5_tensors(image_name)[slices[0]:slices[1]]
+        if slice_random:
+            image = tf.squeeze(image, axis=0)
         image.set_shape(image_shape)
         outputs = [image]
     else:
@@ -55,6 +60,8 @@ def load_data_from_file(fpath, slice_random=False, no_kspace=False, multicoil=Fa
         outputs = [mask]
     if not no_kspace:
         kspace = h5_tensors(kspace_name)[slices[0]:slices[1]]
+        if slice_random:
+            kspace = tf.squeeze(kspace, axis=0)
         kspace.set_shape(kspace_shape)
         outputs.append(kspace)
     return outputs
