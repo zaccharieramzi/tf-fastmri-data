@@ -15,7 +15,7 @@ pip install .
 
 ## Example use
 
-```
+```python
 from tf_fastmri_data.datasets.cartesian import CartesianFastMRIDatasetBuilder
 
 train_dataset = CartesianFastMRIDatasetBuilder(path='/path/to/singlecoil_train').preprocessed_ds
@@ -33,6 +33,26 @@ This will allow you to not have to specify the path when instantiating a `FastMR
 
 The PyTorch equivalent of this library is simply the [official fastMRI repository](https://github.com/facebookresearch/fastMRI).
 In particular, the [data folder](https://github.com/facebookresearch/fastMRI/tree/master/data) is where you find the data utils.
+
+## Benchmark
+
+You can run the benchmark script with the following command:
+```
+FASTMRI_DATA_DIR=/path/to/fastmri python benchmark.py
+```
+
+Currently the benchmark gives the following output:
+```
+Multi coil with tfio loading (random slice): 0.4548630166053772s per-file.
+Single coil with tfio loading (random slice): 0.01658494710922241s per-file.
+Multi coil with h5py loading (random slice, without preprocessing): 0.010439331208042165s per-file.
+Single coil with h5py loading (random slice, without preprocessing): 0.0015996736497735258s per-file.
+Single coil training with tfio loading: 0.04578723907470703s per-step.
+```
+
+You can also see the recommendation of TensorBoard regarding the single coil dataset (with a very simple model):
+
+![TensorBoard reco](tensorboard_recommendation.png)
 
 ## Citation
 
