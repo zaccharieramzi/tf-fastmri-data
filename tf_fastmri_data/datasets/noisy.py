@@ -49,6 +49,8 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         model_inputs = (image_noisy,)
         if self.noise_input:
             model_inputs += (noise_power,)
+        else:
+            model_inputs = model_inputs[0]
         if self.residual_learning:
             if self.normal_noise_output:
                 model_outputs = normal_noise
