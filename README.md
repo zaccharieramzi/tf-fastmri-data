@@ -43,8 +43,8 @@ FASTMRI_DATA_DIR=/path/to/fastmri python benchmark.py
 
 Currently the benchmark gives the following output:
 ```
-Multi coil with tfio loading (random slice): 0.4548630166053772s per-file.
-Single coil with tfio loading (random slice): 0.01658494710922241s per-file.
+Multi coil with tfio loading (random slice): 0.369743709564209s per-file.
+Single coil with tfio loading (random slice): 0.02855397939682007s per-file.
 Multi coil with h5py loading (random slice, without preprocessing): 0.010439331208042165s per-file.
 Single coil with h5py loading (random slice, without preprocessing): 0.0015996736497735258s per-file.
 Single coil training with tfio loading: 0.04578723907470703s per-step.
