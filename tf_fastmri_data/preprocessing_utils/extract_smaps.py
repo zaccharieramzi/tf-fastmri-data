@@ -1,8 +1,8 @@
 from math import pi
-import multiprocessing
 
 import tensorflow as tf
-from tensorflow.python.ops.signal.fft_ops import ifft2d, ifftshift, fftshift
+
+from tf_fastmri_data.preprocessing_utils.fourier.cartesian import ortho_ifft2d
 
 
 @tf.function
@@ -25,8 +25,6 @@ def extract_smaps(kspace, low_freq_percentage=8):
         tf.Tensor: extracted raw sensitivity maps.
     """
     k_shape = tf.shape(kspace)[-2:]
-    n_slices = tf.shape(kspace)[0]
-    n_coils = tf.shape(kspace)[1]
     n_low_freq = tf.cast(k_shape * low_freq_percentage / 100, tf.int32)
     center_dimension = tf.cast(k_shape / 2, tf.int32)
     low_freq_lower_locations = center_dimension - tf.cast(n_low_freq / 2, tf.int32)
@@ -40,18 +38,7 @@ def extract_smaps(kspace, low_freq_percentage=8):
     low_freq_mask = tf.transpose(tf.logical_and(X_mask, Y_mask))[None, None, :]
     ###
     low_freq_kspace = kspace * tf.cast(low_freq_mask, kspace.dtype)
-    shifted_kspace = ifftshift(low_freq_kspace, axes=[2, 3])
-    batched_kspace = tf.reshape(shifted_kspace, (-1, k_shape[0], k_shape[1]))
-    batched_coil_image_low_freq_shifted = tf.map_fn(
-        ifft2d,
-        batched_kspace,
-        parallel_iterations=multiprocessing.cpu_count(),
-    )
-    coil_image_low_freq_shifted = tf.reshape(
-        batched_coil_image_low_freq_shifted,
-        (n_slices, n_coils, k_shape[0], k_shape[1]),
-    )
-    coil_image_low_freq = fftshift(coil_image_low_freq_shifted, axes=[2, 3])
+    coil_image_low_freq = ortho_ifft2d(low_freq_kspace)
     # no need to norm this since they all have the same norm
     low_freq_rss = tf.norm(coil_image_low_freq, axis=1)
     coil_smap = coil_image_low_freq / low_freq_rss[:, None]
