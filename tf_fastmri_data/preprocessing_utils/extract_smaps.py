@@ -1,4 +1,5 @@
 from math import pi
+import multiprocessing
 
 import tensorflow as tf
 from tensorflow.python.ops.signal.fft_ops import ifft2d, ifftshift, fftshift
@@ -44,7 +45,7 @@ def extract_smaps(kspace, low_freq_percentage=8):
     batched_coil_image_low_freq_shifted = tf.map_fn(
         ifft2d,
         batched_kspace,
-        parallel_iterations=10,
+        parallel_iterations=multiprocessing.cpu_count(),
     )
     coil_image_low_freq_shifted = tf.reshape(
         batched_coil_image_low_freq_shifted,
