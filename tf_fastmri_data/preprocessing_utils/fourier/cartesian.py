@@ -22,9 +22,9 @@ def ortho_ifft2d(kspace):
     )
     if len(kspace.shape) == 4:
         # multicoil case
-        image_shape = [n_slices, k_shape_x, k_shape_y]
-    else:
         image_shape = [n_slices, ncoils, k_shape_x, k_shape_y]
+    else:
+        image_shape = [n_slices, k_shape_x, k_shape_y]
     shifted_image = tf.reshape(batched_shifted_image, image_shape)
     image = fftshift(shifted_image, axes=axes)
     return scaling_norm * image
