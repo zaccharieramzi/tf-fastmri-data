@@ -44,6 +44,7 @@ def load_data_from_file(fpath, slice_random=False, no_kspace=False, multicoil=Fa
             minval=0,
             maxval=n_slices,
             dtype=tf.int64,
+            seed=0,
         )
         slices = (i_slice, i_slice + 1)
     else:
