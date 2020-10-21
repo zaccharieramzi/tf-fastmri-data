@@ -74,7 +74,7 @@ class FastMRIDatasetBuilder:
         )
         if self.shuffle:
             self.files_ds = self.files_ds.shuffle(
-                buffer_size=1000,
+                buffer_size=len(self.filtered_files),
                 seed=self.seed,
                 reshuffle_each_iteration=False,
             )
