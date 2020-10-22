@@ -28,6 +28,7 @@ class FastMRIDatasetBuilder:
             no_kspace=False,
             complex_image=False,
             batch_size=None,
+            force_determinism=False,
         ):
         self.dataset = dataset
         self._check_dataset()
@@ -54,6 +55,7 @@ class FastMRIDatasetBuilder:
         self.no_kspace = no_kspace
         self.complex_image = complex_image
         self.batch_size = batch_size
+        self.force_determinism = force_determinism
         if self.batch_size is not None and not self.slice_random:
             raise ValueError('You can only use batching when selecting one slice')
         if self.slice_random and self.batch_size is None:
@@ -78,7 +80,7 @@ class FastMRIDatasetBuilder:
                 seed=self.seed,
                 reshuffle_each_iteration=False,
             )
-        self.num_parallel_calls = tf.data.experimental.AUTOTUNE if self.slice_random else None
+        self.num_parallel_calls = tf.data.experimental.AUTOTUNE if self.slice_random and not self.force_determinism else None
         self.built = False
         if prebuild:
             self._build_datasets()
@@ -103,7 +105,7 @@ class FastMRIDatasetBuilder:
                 multicoil=self.multicoil,
                 mode=self.mode,
             ),
-            num_parallel_calls=self.num_parallel_calls,
+            # num_parallel_calls=self.num_parallel_calls,
             deterministic=True,
         )
         if self.complex_image:
