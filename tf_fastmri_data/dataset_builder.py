@@ -56,6 +56,8 @@ class FastMRIDatasetBuilder:
         self.complex_image = complex_image
         self.batch_size = batch_size
         self.force_determinism = force_determinism
+        # NOTE: this is needed due to a race condition to RNG with parallel
+        # map, see https://github.com/tensorflow/tensorflow/issues/13932#issuecomment-341263301
         if self.batch_size is not None and not self.slice_random:
             raise ValueError('You can only use batching when selecting one slice')
         if self.slice_random and self.batch_size is None:
