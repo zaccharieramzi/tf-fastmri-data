@@ -107,7 +107,7 @@ class FastMRIDatasetBuilder:
                 multicoil=self.multicoil,
                 mode=self.mode,
             ),
-            # num_parallel_calls=self.num_parallel_calls,
+            num_parallel_calls=self.num_parallel_calls,
             deterministic=True,
         )
         if self.complex_image:
