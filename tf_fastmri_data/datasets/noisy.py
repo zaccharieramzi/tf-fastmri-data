@@ -42,6 +42,7 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             mean=0.0,
             stddev=1.0,
             dtype=image.dtype,
+            seed=0,
         )
         noise_power_bdcast = noise_power[:, None, None, None]
         noise = normal_noise * noise_power_bdcast
@@ -114,6 +115,7 @@ class ComplexNoisyFastMRIDatasetBuilder(NoisyFastMRIDatasetBuilder):
             mean=0.0,
             stddev=1.0,
             dtype=tf.float32,
+            seed=0,
         )
         normal_noise = tf.complex(normal_noise[..., 0], normal_noise[..., 1])
         noise_power_bdcast = noise_power[:, None, None, None]

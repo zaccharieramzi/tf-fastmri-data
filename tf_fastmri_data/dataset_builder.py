@@ -28,6 +28,7 @@ class FastMRIDatasetBuilder:
             no_kspace=False,
             complex_image=False,
             batch_size=None,
+            force_determinism=False,
         ):
         self.dataset = dataset
         self._check_dataset()
@@ -54,6 +55,9 @@ class FastMRIDatasetBuilder:
         self.no_kspace = no_kspace
         self.complex_image = complex_image
         self.batch_size = batch_size
+        self.force_determinism = force_determinism
+        # NOTE: this is needed due to a race condition to RNG with parallel
+        # map, see https://github.com/tensorflow/tensorflow/issues/13932#issuecomment-341263301
         if self.batch_size is not None and not self.slice_random:
             raise ValueError('You can only use batching when selecting one slice')
         if self.slice_random and self.batch_size is None:
@@ -74,11 +78,11 @@ class FastMRIDatasetBuilder:
         )
         if self.shuffle:
             self.files_ds = self.files_ds.shuffle(
-                buffer_size=1000,
+                buffer_size=len(self.filtered_files),
                 seed=self.seed,
                 reshuffle_each_iteration=False,
             )
-        self.num_parallel_calls = tf.data.experimental.AUTOTUNE if self.slice_random else None
+        self.num_parallel_calls = tf.data.experimental.AUTOTUNE if self.slice_random and not self.force_determinism else None
         self.built = False
         if prebuild:
             self._build_datasets()
@@ -104,12 +108,15 @@ class FastMRIDatasetBuilder:
                 mode=self.mode,
             ),
             num_parallel_calls=self.num_parallel_calls,
+            deterministic=True,
         )
         if self.complex_image:
             # you can only ask complex image if you ask for kspace
             # for now also available only for knee images (320 x 320)
             self._raw_ds = self._raw_ds.map(
-                lambda _, kspace: crop(ortho_ifft2d(kspace), (320, 320))
+                lambda _, kspace: crop(ortho_ifft2d(kspace), (320, 320)),
+                num_parallel_calls=self.num_parallel_calls,
+                deterministic=True,
             )
         if self.brain:
             output_shape_ds = tf.data.Dataset.from_tensor_slices(
@@ -119,13 +126,16 @@ class FastMRIDatasetBuilder:
                 (self._raw_ds, output_shape_ds)
             )
             self._raw_ds = self._raw_ds.map(
-                lambda tensors, output_shape: (*tensors, output_shape)
+                lambda tensors, output_shape: (*tensors, output_shape),
+                num_parallel_calls=self.num_parallel_calls,
+                deterministic=True,
             )
         if self.batch_size is not None:
             self._raw_ds = self._raw_ds.batch(self.batch_size)
         self._preprocessed_ds = self._raw_ds.map(
             self.preprocessing,
             num_parallel_calls=self.num_parallel_calls,
+            deterministic=True,
         )
         if self.n_samples is not None:
             self._preprocessed_ds = self._preprocessed_ds.take(self.n_samples)
