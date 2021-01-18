@@ -31,7 +31,7 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         if self.mode == 'test':
             raise NotImplementedError('Noisy dataset only works for train/val')
 
-    def _preprocessing_train(self, image):
+    def _preprocessing_train(self, image, *args):
         image = image[..., None]
         if self.image_size != 320:
             image = tf.image.resize(image, [self.image_size, self.image_size])
@@ -59,7 +59,7 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
                 model_outputs = noise
         else:
             model_outputs = image
-        return model_inputs, model_outputs
+        return (model_inputs, *args), model_outputs
 
     def _draw_gaussian_noise_power(self, batch_size):
         noise_power = tf.random.normal(
@@ -106,7 +106,7 @@ class ComplexNoisyFastMRIDatasetBuilder(NoisyFastMRIDatasetBuilder):
         if orig_prebuild:
             self._build_datasets()
 
-    def _preprocessing_train(self, image):
+    def _preprocessing_train(self, image, *args):
         image = scale_tensors(image, scale_factor=self.scale_factor)[0]
         image = image[..., None]
         noise_power = self.draw_noise_power(batch_size=tf.shape(image)[0])
@@ -133,4 +133,4 @@ class ComplexNoisyFastMRIDatasetBuilder(NoisyFastMRIDatasetBuilder):
                 model_outputs = noise
         else:
             model_outputs = image
-        return model_inputs, model_outputs
+        return (model_inputs, *args), model_outputs
