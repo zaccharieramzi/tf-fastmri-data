@@ -4,7 +4,7 @@ import tensorflow as tf
 import tensorflow_io as tfio
 
 
-def load_data_from_file(fpath, slice_random=False, no_kspace=False, multicoil=False, mode='train'):
+def load_data_from_file(fpath, slice_num=-1, slice_random=False, no_kspace=False, multicoil=False, mode='train'):
     if multicoil:
         image_name = '/reconstruction_rss'
         kspace_shape = tuple([None]*4)
@@ -12,7 +12,7 @@ def load_data_from_file(fpath, slice_random=False, no_kspace=False, multicoil=Fa
         image_name = '/reconstruction_esc'
         kspace_shape = tuple([None]*3)
     image_shape = tuple([None]*3)
-    if slice_random:
+    if slice_random or slice_num > -1:
         kspace_shape = kspace_shape[1:]
         image_shape = image_shape[1:]
     mask_shape = (None,)
@@ -50,8 +50,11 @@ def load_data_from_file(fpath, slice_random=False, no_kspace=False, multicoil=Fa
     else:
         slices = (0, n_slices)
     if mode == 'train':
-        image = h5_tensors(image_name)[slices[0]:slices[1]]
-        if slice_random:
+        if slice_num > -1:
+            image = h5_tensors(image_name)[slice_num:slice_num+1]
+        else:
+            image = h5_tensors(image_name)[slices[0]:slices[1]]
+        if slice_random or slice_num > -1:
             image = tf.squeeze(image, axis=0)
         image.set_shape(image_shape)
         outputs = [image]
@@ -60,18 +63,24 @@ def load_data_from_file(fpath, slice_random=False, no_kspace=False, multicoil=Fa
         mask.set_shape(mask_shape)
         outputs = [mask]
     if not no_kspace:
-        kspace = h5_tensors(kspace_name)[slices[0]:slices[1]]
-        if slice_random:
+        if slice_num > -1:
+            kspace = h5_tensors(kspace_name)[slice_num:slice_num+1]
+        else:
+            kspace = h5_tensors(kspace_name)[slices[0]:slices[1]]
+        if slice_random or slice_num > -1:
             kspace = tf.squeeze(kspace, axis=0)
         kspace.set_shape(kspace_shape)
         outputs.append(kspace)
     return outputs
 
+
 def load_metadata_from_file(filename):
     with h5py.File(filename, 'r') as h5_obj:
         contrast = h5_obj.attrs['acquisition']
         acceleration_factor = h5_obj.attrs.get('acceleration')
-        return contrast, acceleration_factor
+        slice_num = h5_obj['kspace'].shape[0]
+        return contrast, acceleration_factor, slice_num
+
 
 def load_output_shape_from_file(filename):
     with h5py.File(filename, 'r') as h5_obj:

@@ -18,12 +18,14 @@ class FastMRIDatasetBuilder:
             multicoil=False,
             slice_random=False,
             contrast=None,
+            split_slices=True,
             af=4,
             shuffle=False,
             seed=0,
             prebuild=True,
             repeat=True,
             n_samples=None,
+            save_shapes=False,
             prefetch=True,
             no_kspace=False,
             complex_image=False,
@@ -33,6 +35,7 @@ class FastMRIDatasetBuilder:
         self.dataset = dataset
         self._check_dataset()
         self.brain = brain
+        self.save_shapes = save_shapes
         self.multicoil = multicoil
         if path is None:
             if FASTMRI_DATA_DIR is None:
@@ -55,6 +58,7 @@ class FastMRIDatasetBuilder:
         self.no_kspace = no_kspace
         self.complex_image = complex_image
         self.batch_size = batch_size
+        self.split_slices = split_slices
         self.force_determinism = force_determinism
         # NOTE: this is needed due to a race condition to RNG with parallel
         # map, see https://github.com/tensorflow/tensorflow/issues/13932#issuecomment-341263301
@@ -73,9 +77,20 @@ class FastMRIDatasetBuilder:
                 acceleration factor ({self.af})
                 found at this path {self.path}'''
             )
-        self.files_ds = tf.data.Dataset.from_tensor_slices(
-            [str(f) for f in self.filtered_files],
-        )
+        if self.split_slices:
+            self.examples = []
+            for fname in self.filtered_files:
+                _, _, num_slices = load_metadata_from_file(fname)
+                self.examples += [
+                    (str(fname), str(slice_ind)) for slice_ind in range(num_slices)
+                ]
+            self.files_ds = tf.data.Dataset.from_tensor_slices(
+                self.examples
+            )
+        else:
+            self.files_ds = tf.data.Dataset.from_tensor_slices(
+                [str(f) for f in self.filtered_files],
+            )
         if self.shuffle:
             self.files_ds = self.files_ds.shuffle(
                 buffer_size=len(self.filtered_files),
@@ -99,10 +114,14 @@ class FastMRIDatasetBuilder:
         return path_default
 
     def _build_datasets(self):
+        if self.split_slices:
+            self.files_ds = self.files_ds.map(
+                lambda x : (x[0], int(x[1]))
+            )
         self._raw_ds = self.files_ds.map(
             partial(
                 load_data_from_file,
-                slice_random=self.slice_random,
+                slice_random=self.slice_random or self.split_slices,
                 no_kspace=self.no_kspace,
                 multicoil=self.multicoil,
                 mode=self.mode,
@@ -118,7 +137,7 @@ class FastMRIDatasetBuilder:
                 num_parallel_calls=self.num_parallel_calls,
                 deterministic=True,
             )
-        if self.brain:
+        if self.save_shapes:
             output_shape_ds = tf.data.Dataset.from_tensor_slices(
                 [load_output_shape_from_file(f) for f in self.filtered_files],
             )
@@ -155,7 +174,7 @@ class FastMRIDatasetBuilder:
     def preprocessing(self, *data_tensors):
         raise NotImplementedError('You must implement a preprocessing function')
 
-    def filter_condition(self, contrast, af=None):
+    def filter_condition(self, contrast, af=None, num_slices=None):
         if self.mode == 'train':
             if self.contrast is None:
                 return True
