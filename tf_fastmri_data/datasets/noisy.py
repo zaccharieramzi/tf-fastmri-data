@@ -118,7 +118,10 @@ class ComplexNoisyFastMRIDatasetBuilder(NoisyFastMRIDatasetBuilder):
             seed=0,
         )
         normal_noise = tf.complex(normal_noise[..., 0], normal_noise[..., 1])
-        noise_power_bdcast = noise_power[:, None, None, None]
+        if self.multicoil:
+            noise_power_bdcast = noise_power[:, None, None, None]
+        else:
+            noise_power_bdcast = noise_power[:, None, None]
         noise = normal_noise * tf.cast(noise_power_bdcast, normal_noise.dtype)
         image_noisy = image + noise
         model_inputs = (image_noisy,)
@@ -133,4 +136,7 @@ class ComplexNoisyFastMRIDatasetBuilder(NoisyFastMRIDatasetBuilder):
                 model_outputs = noise
         else:
             model_outputs = image
-        return (model_inputs, *args), model_outputs
+        if args:
+            return (model_inputs, *args), model_outputs
+        else:
+            return model_inputs, model_outputs
