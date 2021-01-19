@@ -18,7 +18,7 @@ class FastMRIDatasetBuilder:
             multicoil=False,
             slice_random=False,
             contrast=None,
-            split_slices=True,
+            split_slices=False,
             af=4,
             shuffle=False,
             seed=0,
@@ -171,8 +171,17 @@ class FastMRIDatasetBuilder:
             self._build_datasets()
         return self._preprocessed_ds
 
+    def _preprocessing_train(self, image, *args):
+        image = image[..., None]
+        if args:
+            return image, args
+        else:
+            return image
+
     def preprocessing(self, *data_tensors):
-        raise NotImplementedError('You must implement a preprocessing function')
+        # By default, we just return the images and kspace
+        preprocessing_outputs = self._preprocessing_train(*data_tensors)
+        return preprocessing_outputs
 
     def filter_condition(self, contrast, af=None, num_slices=None):
         if self.mode == 'train':

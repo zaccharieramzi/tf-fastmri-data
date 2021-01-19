@@ -44,7 +44,10 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             dtype=image.dtype,
             seed=0,
         )
-        noise_power_bdcast = noise_power[:, None, None, None]
+        if self.multicoil or not self.split_slices:
+            noise_power_bdcast = noise_power[:, None, None, None]
+        else:
+            noise_power_bdcast = noise_power[:, None, None]
         noise = normal_noise * noise_power_bdcast
         image_noisy = image + noise
         model_inputs = (image_noisy,)
@@ -118,7 +121,7 @@ class ComplexNoisyFastMRIDatasetBuilder(NoisyFastMRIDatasetBuilder):
             seed=0,
         )
         normal_noise = tf.complex(normal_noise[..., 0], normal_noise[..., 1])
-        if self.multicoil:
+        if self.multicoil or not self.split_slices:
             noise_power_bdcast = noise_power[:, None, None, None]
         else:
             noise_power_bdcast = noise_power[:, None, None]
