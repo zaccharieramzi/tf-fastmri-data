@@ -1,8 +1,0 @@
-language: python
-cache: pip
-install:
-  - pip install pyxb pytest==5.0.0
-  - pip install .
-
-script:
-  - pytest -s tf_fastmri_data/tests
