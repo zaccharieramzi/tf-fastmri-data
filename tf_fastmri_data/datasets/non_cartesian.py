@@ -83,7 +83,7 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         nc_kspace = nufft(self.nfft_obj, orig_image_channels, traj, self.image_size)
         nc_kspace, image = scale_tensors(nc_kspace, image, scale_factor=self.scale_factor)
         image = image[..., None]
-        nc_kspace = nc_kspace[..., None]
+        nc_kspaces_channeled = nc_kspace[..., None]
         orig_shape = tf.ones([tf.shape(kspace)[0]], dtype=tf.int32) * tf.shape(kspace)[-1]
         extra_args = (orig_shape,)
         if self.dcomp:
@@ -93,7 +93,7 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             ) * dcomp[None, :]
             extra_args += (dcomp,)
         model_inputs = (nc_kspaces_channeled, traj)
-        if self.multicoil
+        if self.multicoil:
             smaps = non_cartesian_extract_smaps(nc_kspace, traj, dcomp, nufftob_back, orig_shape)
             model_inputs += (smaps,)
         model_inputs += (extra_args,)
