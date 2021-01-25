@@ -23,12 +23,14 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             image_size=IMAGE_SIZE,
             acq_type='radial',
             dcomp=True,
+            scale_factor=1e6,
             **kwargs,
         ):
         self.image_size = image_size
         self.acq_type = acq_type
         self._check_acq_type()
         self.dcomp = dcomp
+        self.scale_factor = scale_factor
         self.nufft_obj = KbNufftModule(
             im_size=self.image_size,
             grid_size=None,
@@ -68,7 +70,7 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
 
     def preprocessing(self, image, kspace):
         traj = self.generate_trajectory()
-        interpob = self.nfft_obj._extract_nufft_interpob()
+        interpob = self.nufft_obj._extract_nufft_interpob()
         nufftob_forw = kbnufft_forward(interpob, multiprocessing=True)
         nufftob_back = kbnufft_adjoint(interpob, multiprocessing=True)
         if self.dcomp:
@@ -80,7 +82,7 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             )
         traj = tf.repeat(traj, tf.shape(image)[0], axis=0)
         orig_image_channels = ortho_ifft2d(kspace)
-        nc_kspace = nufft(self.nfft_obj, orig_image_channels, traj, self.image_size)
+        nc_kspace = nufft(self.nufft_obj, orig_image_channels, traj, self.image_size)
         nc_kspace, image = scale_tensors(nc_kspace, image, scale_factor=self.scale_factor)
         image = image[..., None]
         nc_kspaces_channeled = nc_kspace[..., None]
