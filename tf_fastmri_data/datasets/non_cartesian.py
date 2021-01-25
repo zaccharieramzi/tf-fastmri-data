@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tfkbnufft import kbnufft_forward, kbnufft_adjoint
 from tfkbnufft.kbnufft import KbNufftModule
-from tfkbnufft.mri.dcomp_calc import calculate_radial_dcomp_tf
+from tfkbnufft.mri.dcomp_calc import calculate_density_compensator
 
 from tf_fastmri_data.dataset_builder import FastMRIDatasetBuilder
 from tf_fastmri_data.preprocessing_utils.extract_smaps import non_cartesian_extract_smaps
@@ -69,10 +69,10 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
     def preprocessing(self, image, kspace):
         traj = self.generate_trajectory()
         interpob = self.nfft_obj._extract_nufft_interpob()
-        nufftob_forw = kbnufft_forward(interpob)
-        nufftob_back = kbnufft_adjoint(interpob)
+        nufftob_forw = kbnufft_forward(interpob, multiprocessing=True)
+        nufftob_back = kbnufft_adjoint(interpob, multiprocessing=True)
         if self.dcomp:
-            dcomp = calculate_radial_dcomp_tf(
+            dcomp = calculate_density_compensator(
                 interpob,
                 nufftob_forw,
                 nufftob_back,
