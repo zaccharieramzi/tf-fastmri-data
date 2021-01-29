@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tfkbnufft import kbnufft_forward, kbnufft_adjoint
 from tfkbnufft.kbnufft import KbNufftModule
-from tfkbnufft.mri.dcomp_calc import calculate_radial_dcomp_tf
+from tfkbnufft.mri.dcomp_calc import calculate_density_compensator
 
 from tf_fastmri_data.dataset_builder import FastMRIDatasetBuilder
 from tf_fastmri_data.preprocessing_utils.extract_smaps import non_cartesian_extract_smaps
@@ -23,12 +23,14 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             image_size=IMAGE_SIZE,
             acq_type='radial',
             dcomp=True,
+            scale_factor=1e6,
             **kwargs,
         ):
         self.image_size = image_size
         self.acq_type = acq_type
         self._check_acq_type()
         self.dcomp = dcomp
+        self.scale_factor = scale_factor
         self.nufft_obj = KbNufftModule(
             im_size=self.image_size,
             grid_size=None,
@@ -68,11 +70,11 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
 
     def preprocessing(self, image, kspace):
         traj = self.generate_trajectory()
-        interpob = self.nfft_obj._extract_nufft_interpob()
-        nufftob_forw = kbnufft_forward(interpob)
-        nufftob_back = kbnufft_adjoint(interpob)
+        interpob = self.nufft_obj._extract_nufft_interpob()
+        nufftob_forw = kbnufft_forward(interpob, multiprocessing=True)
+        nufftob_back = kbnufft_adjoint(interpob, multiprocessing=True)
         if self.dcomp:
-            dcomp = calculate_radial_dcomp_tf(
+            dcomp = calculate_density_compensator(
                 interpob,
                 nufftob_forw,
                 nufftob_back,
@@ -80,10 +82,10 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             )
         traj = tf.repeat(traj, tf.shape(image)[0], axis=0)
         orig_image_channels = ortho_ifft2d(kspace)
-        nc_kspace = nufft(self.nfft_obj, orig_image_channels, traj, self.image_size)
+        nc_kspace = nufft(self.nufft_obj, orig_image_channels, traj, self.image_size)
         nc_kspace, image = scale_tensors(nc_kspace, image, scale_factor=self.scale_factor)
         image = image[..., None]
-        nc_kspace = nc_kspace[..., None]
+        nc_kspaces_channeled = nc_kspace[..., None]
         orig_shape = tf.ones([tf.shape(kspace)[0]], dtype=tf.int32) * tf.shape(kspace)[-1]
         extra_args = (orig_shape,)
         if self.dcomp:
@@ -93,7 +95,7 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             ) * dcomp[None, :]
             extra_args += (dcomp,)
         model_inputs = (nc_kspaces_channeled, traj)
-        if self.multicoil
+        if self.multicoil:
             smaps = non_cartesian_extract_smaps(nc_kspace, traj, dcomp, nufftob_back, orig_shape)
             model_inputs += (smaps,)
         model_inputs += (extra_args,)

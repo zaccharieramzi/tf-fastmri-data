@@ -24,7 +24,7 @@ def _crop_for_nufft(image, im_size):
     return cropped_image
 
 def nufft(nufft_ob, image, ktraj, image_size=None):
-    forward_op = kbnufft_forward(nufft_ob._extract_nufft_interpob())
+    forward_op = kbnufft_forward(nufft_ob._extract_nufft_interpob(), multiprocessing=True)
     shape = tf.shape(image)[-1]
     if image_size is not None:
         image_adapted = tf.cond(
