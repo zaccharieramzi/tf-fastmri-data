@@ -25,7 +25,7 @@ class FastMRIDatasetBuilder:
             prebuild=True,
             repeat=True,
             n_samples=None,
-            save_shapes=False,
+            output_shapes=False,
             prefetch=True,
             no_kspace=False,
             complex_image=False,
@@ -35,7 +35,7 @@ class FastMRIDatasetBuilder:
         self.dataset = dataset
         self._check_dataset()
         self.brain = brain
-        self.save_shapes = save_shapes
+        self.output_shapes = output_shapes
         self.multicoil = multicoil
         if path is None:
             if FASTMRI_DATA_DIR is None:
@@ -116,12 +116,12 @@ class FastMRIDatasetBuilder:
     def _build_datasets(self):
         if self.split_slices:
             self.files_ds = self.files_ds.map(
-                lambda x : (x[0], int(x[1]))
+                lambda x : (x[0], tf.cast(x[1], 'int64'))
             )
         self._raw_ds = self.files_ds.map(
             partial(
                 load_data_from_file,
-                slice_random=self.slice_random or self.split_slices,
+                select_slices=self.slice_random or self.split_slices,
                 no_kspace=self.no_kspace,
                 multicoil=self.multicoil,
                 mode=self.mode,
@@ -137,7 +137,7 @@ class FastMRIDatasetBuilder:
                 num_parallel_calls=self.num_parallel_calls,
                 deterministic=True,
             )
-        if self.save_shapes:
+        if self.output_shapes:
             output_shape_ds = tf.data.Dataset.from_tensor_slices(
                 [load_output_shape_from_file(f) for f in self.filtered_files],
             )
