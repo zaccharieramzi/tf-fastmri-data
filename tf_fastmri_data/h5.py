@@ -40,15 +40,15 @@ def load_data_from_file(fpath, slice_index=-1, select_slices=False, no_kspace=Fa
     n_slices = h5_main.shape[0]
     if select_slices:
         if slice_index > -1:
-            i_slice = slice_index
+            i_slice = tf.cast(slice_index, tf.int64)
         else:
             i_slice = tf.random.uniform(
-            shape=(),
-            minval=0,
-            maxval=n_slices,
-            dtype=tf.int64,
-            seed=0,
-        )
+                shape=(),
+                minval=0,
+                maxval=n_slices,
+                dtype=tf.int64,
+                seed=0,
+            )
         slices = (i_slice, i_slice + 1)
     else:
         slices = (0, n_slices)
@@ -65,7 +65,7 @@ def load_data_from_file(fpath, slice_index=-1, select_slices=False, no_kspace=Fa
         outputs = [mask]
     if not no_kspace:
         kspace = h5_tensors(kspace_name)[slices[0]:slices[1]]
-        if select_slices > -1:
+        if select_slices:
             kspace = tf.squeeze(kspace, axis=0)
         kspace.set_shape(kspace_shape)
         outputs.append(kspace)

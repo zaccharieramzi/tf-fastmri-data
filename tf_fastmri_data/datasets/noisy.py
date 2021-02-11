@@ -44,7 +44,7 @@ class NoisyFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             dtype=image.dtype,
             seed=0,
         )
-        if self.multicoil or not self.split_slices:
+        if self.multicoil:
             noise_power_bdcast = noise_power[:, None, None, None]
         else:
             noise_power_bdcast = noise_power[:, None, None]
