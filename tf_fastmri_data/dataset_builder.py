@@ -116,7 +116,7 @@ class FastMRIDatasetBuilder:
     def _build_datasets(self):
         if self.split_slices:
             self.files_ds = self.files_ds.map(
-                lambda x : (x[0], tf.cast(x[1], 'int64'))
+                lambda x : (x[0], int(x[1]))
             )
         self._raw_ds = self.files_ds.map(
             partial(
