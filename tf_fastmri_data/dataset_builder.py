@@ -18,12 +18,14 @@ class FastMRIDatasetBuilder:
             multicoil=False,
             slice_random=False,
             contrast=None,
+            split_slices=False,
             af=4,
             shuffle=False,
             seed=0,
             prebuild=True,
             repeat=True,
             n_samples=None,
+            output_shapes=None,
             prefetch=True,
             no_kspace=False,
             complex_image=False,
@@ -33,6 +35,7 @@ class FastMRIDatasetBuilder:
         self.dataset = dataset
         self._check_dataset()
         self.brain = brain
+        self.output_shapes = self.brain if output_shapes is None else output_shapes
         self.multicoil = multicoil
         if path is None:
             if FASTMRI_DATA_DIR is None:
@@ -55,12 +58,13 @@ class FastMRIDatasetBuilder:
         self.no_kspace = no_kspace
         self.complex_image = complex_image
         self.batch_size = batch_size
+        self.split_slices = split_slices
         self.force_determinism = force_determinism
         # NOTE: this is needed due to a race condition to RNG with parallel
         # map, see https://github.com/tensorflow/tensorflow/issues/13932#issuecomment-341263301
         if self.batch_size is not None and not self.slice_random:
             raise ValueError('You can only use batching when selecting one slice')
-        if self.slice_random and self.batch_size is None:
+        if (self.slice_random or self.split_slices) and self.batch_size is None:
             self.batch_size = 1
         self._files = sorted(self.path.glob('*.h5'))
         self.filtered_files = [
@@ -73,9 +77,20 @@ class FastMRIDatasetBuilder:
                 acceleration factor ({self.af})
                 found at this path {self.path}'''
             )
-        self.files_ds = tf.data.Dataset.from_tensor_slices(
-            [str(f) for f in self.filtered_files],
-        )
+        if self.split_slices:
+            self.examples = []
+            for fname in self.filtered_files:
+                _, _, num_slices = load_metadata_from_file(fname)
+                self.examples += [
+                    (str(fname), str(slice_ind)) for slice_ind in range(num_slices)
+                ]
+            self.files_ds = tf.data.Dataset.from_tensor_slices(
+                self.examples
+            )
+        else:
+            self.files_ds = tf.data.Dataset.from_tensor_slices(
+                [str(f) for f in self.filtered_files],
+            )
         if self.shuffle:
             self.files_ds = self.files_ds.shuffle(
                 buffer_size=len(self.filtered_files),
@@ -99,10 +114,14 @@ class FastMRIDatasetBuilder:
         return path_default
 
     def _build_datasets(self):
+        if self.split_slices:
+            self.files_ds = self.files_ds.map(
+                lambda x : (x[0], int(x[1]))
+            )
         self._raw_ds = self.files_ds.map(
             partial(
                 load_data_from_file,
-                slice_random=self.slice_random,
+                select_slices=self.slice_random or self.split_slices,
                 no_kspace=self.no_kspace,
                 multicoil=self.multicoil,
                 mode=self.mode,
@@ -118,7 +137,7 @@ class FastMRIDatasetBuilder:
                 num_parallel_calls=self.num_parallel_calls,
                 deterministic=True,
             )
-        if self.brain:
+        if self.output_shapes:
             output_shape_ds = tf.data.Dataset.from_tensor_slices(
                 [load_output_shape_from_file(f) for f in self.filtered_files],
             )
@@ -157,10 +176,19 @@ class FastMRIDatasetBuilder:
             self._build_datasets()
         return self._preprocessed_ds
 
-    def preprocessing(self, *data_tensors):
-        raise NotImplementedError('You must implement a preprocessing function')
+    def _preprocessing_train(self, image, *args):
+        image = image[..., None]
+        if args:
+            return image, args
+        else:
+            return image
 
-    def filter_condition(self, contrast, af=None):
+    def preprocessing(self, *data_tensors):
+        # By default, we just return the images and kspace
+        preprocessing_outputs = self._preprocessing_train(*data_tensors)
+        return preprocessing_outputs
+
+    def filter_condition(self, contrast, af=None, num_slices=None):
         if self.mode == 'train':
             if self.contrast is None:
                 return True

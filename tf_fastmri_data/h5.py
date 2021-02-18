@@ -4,7 +4,7 @@ import tensorflow as tf
 import tensorflow_io as tfio
 
 
-def load_data_from_file(fpath, slice_random=False, no_kspace=False, multicoil=False, mode='train'):
+def load_data_from_file(fpath, slice_index=-1, select_slices=False, no_kspace=False, multicoil=False, mode='train'):
     if multicoil:
         image_name = '/reconstruction_rss'
         kspace_shape = tuple([None]*4)
@@ -12,7 +12,7 @@ def load_data_from_file(fpath, slice_random=False, no_kspace=False, multicoil=Fa
         image_name = '/reconstruction_esc'
         kspace_shape = tuple([None]*3)
     image_shape = tuple([None]*3)
-    if slice_random:
+    if select_slices:
         kspace_shape = kspace_shape[1:]
         image_shape = image_shape[1:]
     mask_shape = (None,)
@@ -38,20 +38,24 @@ def load_data_from_file(fpath, slice_random=False, no_kspace=False, multicoil=Fa
         main_tensor = kspace_name
     h5_main = h5_tensors(main_tensor)
     n_slices = h5_main.shape[0]
-    if slice_random:
-        i_slice = tf.random.uniform(
-            shape=(),
-            minval=0,
-            maxval=n_slices,
-            dtype=tf.int64,
-            seed=0,
-        )
+    if select_slices:
+        if slice_index > -1:
+            i_slice = tf.cast(slice_index, tf.int64)
+        else:
+            i_slice = tf.random.uniform(
+                shape=(),
+                minval=0,
+                maxval=n_slices,
+                dtype=tf.int64,
+                seed=0,
+            )
         slices = (i_slice, i_slice + 1)
     else:
         slices = (0, n_slices)
+    slices = tf.cast(slices, tf.int64)
     if mode == 'train':
         image = h5_tensors(image_name)[slices[0]:slices[1]]
-        if slice_random:
+        if select_slices:
             image = tf.squeeze(image, axis=0)
         image.set_shape(image_shape)
         outputs = [image]
@@ -61,17 +65,20 @@ def load_data_from_file(fpath, slice_random=False, no_kspace=False, multicoil=Fa
         outputs = [mask]
     if not no_kspace:
         kspace = h5_tensors(kspace_name)[slices[0]:slices[1]]
-        if slice_random:
+        if select_slices:
             kspace = tf.squeeze(kspace, axis=0)
         kspace.set_shape(kspace_shape)
         outputs.append(kspace)
     return outputs
 
+
 def load_metadata_from_file(filename):
     with h5py.File(filename, 'r') as h5_obj:
         contrast = h5_obj.attrs['acquisition']
         acceleration_factor = h5_obj.attrs.get('acceleration')
-        return contrast, acceleration_factor
+        slice_num = h5_obj['kspace'].shape[0]
+        return contrast, acceleration_factor, slice_num
+
 
 def load_output_shape_from_file(filename):
     with h5py.File(filename, 'r') as h5_obj:
