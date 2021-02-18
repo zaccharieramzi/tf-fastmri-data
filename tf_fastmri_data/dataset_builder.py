@@ -35,7 +35,7 @@ class FastMRIDatasetBuilder:
         self.dataset = dataset
         self._check_dataset()
         self.brain = brain
-        self.output_shapes = output_shapes
+        self.output_shapes = self.brain if output_shapes is None else output_shapes
         self.multicoil = multicoil
         if path is None:
             if FASTMRI_DATA_DIR is None:
