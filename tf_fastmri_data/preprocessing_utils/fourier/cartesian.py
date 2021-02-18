@@ -38,7 +38,7 @@ def ortho_fft2d(image):
     scaling_norm = tf.cast(tf.math.sqrt(tf.cast(tf.math.reduce_prod(tf.shape(image)[-2:]), 'float32')), image.dtype)
     if len(image.shape) == 4:
         # multicoil case
-        ncoils = tf.shape(kspace)[1]
+        ncoils = tf.shape(image)[1]
     n_slices = tf.shape(image)[0]
     i_shape_x = tf.shape(image)[-2]
     i_shape_y = tf.shape(image)[-1]
