@@ -53,7 +53,7 @@ def ortho_fft2d(image):
         # multicoil case
         kspace_shape = [n_slices, ncoils, k_shape_x, k_shape_y]
     elif len(image.shape) == 3:
-        kspace_shape = [n_slices, k_shape_x, k_shape_y]
+        kspace_shape = [n_slices, i_shape_x, i_shape_y]
     else:
         kspace_shape = [i_shape_x, i_shape_y]
     shifted_kspace = tf.reshape(batched_shifted_kspace, kspace_shape)
