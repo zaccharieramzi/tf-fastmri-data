@@ -109,7 +109,7 @@ class ComplexNoisyFastMRIDatasetBuilder(NoisyFastMRIDatasetBuilder):
         if orig_prebuild:
             self._build_datasets()
 
-    def _preprocessing_train(self, image, *args):
+    def _preprocessing_train(self, image):
         image = scale_tensors(image, scale_factor=self.scale_factor)[0]
         image = image[..., None]
         noise_power = self.draw_noise_power(batch_size=tf.shape(image)[0])
@@ -139,7 +139,4 @@ class ComplexNoisyFastMRIDatasetBuilder(NoisyFastMRIDatasetBuilder):
                 model_outputs = noise
         else:
             model_outputs = image
-        if args:
-            return (model_inputs, *args), model_outputs
-        else:
-            return model_inputs, model_outputs
+        return model_inputs, model_outputs
