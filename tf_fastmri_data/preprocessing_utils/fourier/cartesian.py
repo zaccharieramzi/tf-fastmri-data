@@ -57,5 +57,5 @@ def ortho_fft2d(image):
     else:
         kspace_shape = [i_shape_x, i_shape_y]
     shifted_kspace = tf.reshape(batched_shifted_kspace, kspace_shape)
-    kspace = fftshift(shifted_kspace, axes=axes)
+    kspace = ifftshift(shifted_kspace, axes=axes)
     return kspace / scaling_norm
