@@ -24,7 +24,3 @@ def test_dataset_builder_init(create_full_fastmri_test_tmp_dataset, dataset, mul
     path = create_full_fastmri_test_tmp_dataset[key_map[multicoil][dataset]]
     FastMRIDatasetBuilder(path=path, dataset=dataset, multicoil=multicoil, prebuild=False)
 
-def test_dataset_builder_error(create_full_fastmri_test_tmp_dataset):
-    path = create_full_fastmri_test_tmp_dataset['fastmri_tmp_singlecoil_train']
-    with pytest.raises(NotImplementedError):
-        FastMRIDatasetBuilder(path=path, prebuild=True)
