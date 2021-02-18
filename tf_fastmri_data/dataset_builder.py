@@ -25,7 +25,7 @@ class FastMRIDatasetBuilder:
             prebuild=True,
             repeat=True,
             n_samples=None,
-            output_shapes=False,
+            output_shapes=None,
             prefetch=True,
             no_kspace=False,
             complex_image=False,
