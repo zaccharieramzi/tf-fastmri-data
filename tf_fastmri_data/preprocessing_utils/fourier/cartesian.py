@@ -55,7 +55,7 @@ def ortho_fft2d(image):
     elif len(image.shape) == 3:
         kspace_shape = [n_slices, k_shape_x, k_shape_y]
     else:
-        kspace_shape = [k_shape_x, k_shape_y]
+        kspace_shape = [i_shape_x, i_shape_y]
     shifted_kspace = tf.reshape(batched_shifted_kspace, kspace_shape)
     kspace = fftshift(shifted_kspace, axes=axes)
     return kspace / scaling_norm
