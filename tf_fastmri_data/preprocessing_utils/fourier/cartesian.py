@@ -51,7 +51,7 @@ def ortho_fft2d(image):
     )
     if len(image.shape) == 4:
         # multicoil case
-        kspace_shape = [n_slices, ncoils, k_shape_x, k_shape_y]
+        kspace_shape = [n_slices, ncoils, i_shape_x, i_shape_y]
     elif len(image.shape) == 3:
         kspace_shape = [n_slices, i_shape_x, i_shape_y]
     else:
