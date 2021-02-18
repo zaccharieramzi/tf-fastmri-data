@@ -40,8 +40,8 @@ def ortho_fft2d(image):
         # multicoil case
         ncoils = tf.shape(kspace)[1]
     n_slices = tf.shape(image)[0]
-    k_shape_x = tf.shape(image)[-2]
-    k_shape_y = tf.shape(image)[-1]
+    i_shape_x = tf.shape(image)[-2]
+    i_shape_y = tf.shape(image)[-1]
     shifted_image = fftshift(image, axes=axes)
     batched_shifted_image = tf.reshape(shifted_image, (-1, k_shape_x, k_shape_y))
     batched_shifted_kspace = tf.map_fn(
