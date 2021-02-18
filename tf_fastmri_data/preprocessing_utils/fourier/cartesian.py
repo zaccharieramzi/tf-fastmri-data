@@ -43,7 +43,7 @@ def ortho_fft2d(image):
     i_shape_x = tf.shape(image)[-2]
     i_shape_y = tf.shape(image)[-1]
     shifted_image = fftshift(image, axes=axes)
-    batched_shifted_image = tf.reshape(shifted_image, (-1, k_shape_x, k_shape_y))
+    batched_shifted_image = tf.reshape(shifted_image, (-1, i_shape_x, i_shape_y))
     batched_shifted_kspace = tf.map_fn(
         fft2d,
         batched_shifted_image,
