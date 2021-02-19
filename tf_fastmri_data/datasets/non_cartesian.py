@@ -53,7 +53,7 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
                 f'acq_type must be spiral, radial or cartesian_debug but is {self.acq_type}'
             )
         if self.acq_type == 'other' and self.traj is None:
-            raise ValueEroor(
+            raise ValueError(
                 f'Please provide a trajectory as input in case `acq_type` is `other`'
             )
 
