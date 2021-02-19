@@ -24,10 +24,12 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             acq_type='radial',
             dcomp=True,
             scale_factor=1e6,
+            trajectory=None,
             **kwargs,
         ):
         self.image_size = image_size
         self.acq_type = acq_type
+        self.traj = trajectory
         self._check_acq_type()
         self.dcomp = dcomp
         self.scale_factor = scale_factor
@@ -46,9 +48,13 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         self._check_dcomp_multicoil()
 
     def _check_acq_type(self,):
-        if self.acq_type not in ['spiral', 'radial', 'cartesian_debug']:
+        if self.acq_type not in ['spiral', 'radial', 'cartesian_debug', 'other']:
             raise ValueError(
                 f'acq_type must be spiral, radial or cartesian_debug but is {self.acq_type}'
+            )
+        if self.acq_type == 'other' and self.traj is None:
+            raise ValueEroor(
+                f'Please provide a trajectory as input in case `acq_type` is `other`'
             )
 
     def _check_mode(self,):
@@ -66,10 +72,13 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             traj = get_debugging_cartesian_trajectory()
         elif self.acq_type == 'spiral':
             traj = get_spiral_trajectory(self.image_size, af=self.af)
+        elif self.acq_type == 'other':
+            traj = self.traj
         return traj
 
     def preprocessing(self, image, kspace):
         traj = self.generate_trajectory()
+        tf.print(tf.shape(traj))
         interpob = self.nufft_obj._extract_nufft_interpob()
         nufftob_forw = kbnufft_forward(interpob, multiprocessing=True)
         nufftob_back = kbnufft_adjoint(interpob, multiprocessing=True)
