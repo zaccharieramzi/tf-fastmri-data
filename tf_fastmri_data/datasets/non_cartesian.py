@@ -24,12 +24,12 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             acq_type='radial',
             dcomp=True,
             scale_factor=1e6,
-            trajectory=None,
+            traj=None,
             **kwargs,
         ):
         self.image_size = image_size
         self.acq_type = acq_type
-        self.traj = trajectory
+        self.traj = traj
         self._check_acq_type()
         self.dcomp = dcomp
         self.scale_factor = scale_factor
