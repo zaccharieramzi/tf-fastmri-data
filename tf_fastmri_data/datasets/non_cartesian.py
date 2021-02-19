@@ -90,12 +90,7 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
                 traj[0],
             )
         traj = tf.repeat(traj, tf.shape(image)[0], axis=0)
-        orig_image_channels = adjust_image_size(
-            ortho_ifft2d(kspace),
-            self.image_size,
-            multicoil=self.multicoil,
-        )
-        image = adjust_image_size(image, self.image_size)
+        orig_image_channels = ortho_ifft2d(kspace)
         nc_kspace = nufft(self.nufft_obj, orig_image_channels, traj, self.image_size)
         nc_kspace, image = scale_tensors(nc_kspace, image, scale_factor=self.scale_factor)
         image = image[..., None]
