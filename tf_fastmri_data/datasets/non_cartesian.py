@@ -13,7 +13,7 @@ from tf_fastmri_data.preprocessing_utils.non_cartesian_trajectories import (
     get_debugging_cartesian_trajectory,
 )
 from tf_fastmri_data.preprocessing_utils.scaling import scale_tensors
-from fastmri_recon.data.utils.crop import adjust_image_size
+from tf_fastmri_data.preprocessing_utils.crop import adjust_image_size
 
 
 IMAGE_SIZE = (640, 400)
@@ -90,7 +90,12 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
                 traj[0],
             )
         traj = tf.repeat(traj, tf.shape(image)[0], axis=0)
-        orig_image_channels = ortho_ifft2d(kspace)
+        orig_image_channels = adjust_image_size(
+            ortho_ifft2d(kspace),
+            self.image_size,
+            multicoil=self.multicoil,
+        )
+        image = adjust_image_size(image, self.image_size)
         nc_kspace = nufft(self.nufft_obj, orig_image_channels, traj, self.image_size)
         nc_kspace, image = scale_tensors(nc_kspace, image, scale_factor=self.scale_factor)
         image = image[..., None]
