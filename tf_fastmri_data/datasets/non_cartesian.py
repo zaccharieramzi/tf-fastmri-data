@@ -78,7 +78,6 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
 
     def preprocessing(self, image, kspace):
         traj = self.generate_trajectory()
-        tf.print(tf.shape(traj))
         interpob = self.nufft_obj._extract_nufft_interpob()
         nufftob_forw = kbnufft_forward(interpob, multiprocessing=True)
         nufftob_back = kbnufft_adjoint(interpob, multiprocessing=True)
