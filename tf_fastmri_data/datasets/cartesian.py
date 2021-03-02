@@ -68,6 +68,7 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             kspace,
             accel_factor=self.af,
             multicoil=self.multicoil,
+            slice_different=self.batch_size is not None and self.batch_size > 1,
         )
         return mask
 
