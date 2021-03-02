@@ -75,12 +75,12 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         if self.batch_size > 1:
             complex_image = ortho_ifft2d(kspace)
             complex_image_padded = adjust_image_size(
-                complex_image,
+                complex_image[None],
                 self.target_image_size,
                 multicoil=self.multicoil,
-            )
+            )[0]
             kspace = ortho_fft2d(complex_image_padded)
-        if output_shape is None
+        if output_shape is None:
             return image, kspace
         else:
             return image, kspace, output_shape
