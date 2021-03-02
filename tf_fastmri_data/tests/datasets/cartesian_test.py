@@ -52,10 +52,12 @@ def test_cartesian_dataset_train_batched(create_full_fastmri_test_tmp_dataset, m
     )
     (kspace, mask, *_others), image = next(ds.preprocessed_ds.as_numpy_iterator())
     np.testing.assert_equal(kspace.shape[-3:], target_image_size + (1,))
-    np.testing.assert_equal(mask.shape[-2:], [batch_size, target_image_size[1]])
+    np.testing.assert_equal(mask.shape[-1], target_image_size[1])
     np.testing.assert_equal(image.shape[-3:], [320, 320, 1])
     np.testing.assert_equal(image.ndim, 4)
     np.testing.assert_equal(kspace.shape[0], batch_size)
+    np.testing.assert_equal(image.shape[0], batch_size)
+    np.testing.assert_equal(mask.shape[0], batch_size)
 
 @pytest.mark.parametrize('mask_mode', ['equidistant', 'random'])
 @pytest.mark.parametrize('output_shape_spec', [True, False])
