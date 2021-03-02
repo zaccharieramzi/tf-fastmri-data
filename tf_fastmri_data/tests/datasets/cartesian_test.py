@@ -35,6 +35,28 @@ def test_cartesian_dataset_train(create_full_fastmri_test_tmp_dataset, mask_mode
     np.testing.assert_equal(image.shape[-3:], [320, 320, 1])
     np.testing.assert_equal(image.ndim, 4)
 
+@pytest.mark.parametrize('multicoil', [True, False])
+def test_cartesian_dataset_train_batched(create_full_fastmri_test_tmp_dataset, multicoil):
+    if multicoil:
+        path = create_full_fastmri_test_tmp_dataset['fastmri_tmp_multicoil_train']
+    else:
+        path = create_full_fastmri_test_tmp_dataset['fastmri_tmp_singlecoil_train']
+    target_image_size = (640, 400)
+    batch_size = 2
+    ds = CartesianFastMRIDatasetBuilder(
+        path=path,
+        multicoil=multicoil,
+        slice_random=True,
+        batch_size=batch_size,
+        target_image_size=target_image_size,
+    )
+    (kspace, mask, *_others), image = next(ds.preprocessed_ds.as_numpy_iterator())
+    np.testing.assert_equal(kspace.shape[-3:], tuple(*target_image_size, 1))
+    np.testing.assert_equal(mask.shape[-2:], [batch_size, target_image_size[1]])
+    np.testing.assert_equal(image.shape[-3:], [320, 320, 1])
+    np.testing.assert_equal(image.ndim, 4)
+    np.testing.assert_equal(kspace.shape[0], batch_size)
+
 @pytest.mark.parametrize('mask_mode', ['equidistant', 'random'])
 @pytest.mark.parametrize('output_shape_spec', [True, False])
 @pytest.mark.parametrize('multicoil', [True, False])
