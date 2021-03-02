@@ -49,6 +49,7 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         super(CartesianFastMRIDatasetBuilder, self).__init__(
             dataset=self.dataset,
             brain=self.brain,
+            rebatch=True,
             **kwargs,
         )
 
