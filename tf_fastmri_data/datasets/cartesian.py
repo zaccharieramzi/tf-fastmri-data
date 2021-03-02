@@ -74,10 +74,10 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         if self.batch_size is not None:
             complex_image = ortho_ifft2d(kspace)
             complex_image_padded = adjust_image_size(
-                complex_image,
+                complex_image[None],
                 self.target_image_size,
                 multicoil=self.multicoil,
-            )
+            )[0]
             kspace = ortho_fft2d(complex_image_padded)
         mask = self.gen_mask(kspace)
         kspace = tf.cast(mask, kspace.dtype) * kspace
