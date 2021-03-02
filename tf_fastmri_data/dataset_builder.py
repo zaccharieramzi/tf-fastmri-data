@@ -31,6 +31,7 @@ class FastMRIDatasetBuilder:
             complex_image=False,
             batch_size=None,
             force_determinism=False,
+            input_context=None,
         ):
         self.dataset = dataset
         self._check_dataset()
@@ -60,6 +61,7 @@ class FastMRIDatasetBuilder:
         self.batch_size = batch_size
         self.split_slices = split_slices
         self.force_determinism = force_determinism
+        self.input_context = input_context
         # NOTE: this is needed due to a race condition to RNG with parallel
         # map, see https://github.com/tensorflow/tensorflow/issues/13932#issuecomment-341263301
         if self.batch_size is not None and not self.slice_random:
@@ -91,9 +93,18 @@ class FastMRIDatasetBuilder:
             self.files_ds = tf.data.Dataset.from_tensor_slices(
                 [str(f) for f in self.filtered_files],
             )
+        if self.input_context is not None:
+            self.files_ds = self.files_ds.shard(
+                self.input_context.num_input_pipelines,
+                self.input_context.input_pipeline_id,
+            )
         if self.shuffle:
+            buffer_size = (
+                len(self.filtered_files) if self.input_context is None
+                else len(self.filtered_files) // self.input_context.num_input_pipelines
+            )
             self.files_ds = self.files_ds.shuffle(
-                buffer_size=len(self.filtered_files),
+                buffer_size=buffer_size,
                 seed=self.seed,
                 reshuffle_each_iteration=False,
             )
