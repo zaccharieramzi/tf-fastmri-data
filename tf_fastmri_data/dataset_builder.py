@@ -31,7 +31,6 @@ class FastMRIDatasetBuilder:
             complex_image=False,
             batch_size=None,
             force_determinism=False,
-            rebatch=False,
         ):
         self.dataset = dataset
         self._check_dataset()
@@ -63,7 +62,6 @@ class FastMRIDatasetBuilder:
         self.force_determinism = force_determinism
         # NOTE: this is needed due to a race condition to RNG with parallel
         # map, see https://github.com/tensorflow/tensorflow/issues/13932#issuecomment-341263301
-        self.rebatch = rebatch
         if self.batch_size is not None and not self.slice_random:
             raise ValueError('You can only use batching when selecting one slice')
         if (self.slice_random or self.split_slices) and self.batch_size is None:
@@ -152,14 +150,17 @@ class FastMRIDatasetBuilder:
                 deterministic=True,
             )
         if self.batch_size is not None:
-            self._raw_ds = self._raw_ds.batch(1 if self.rebatch else self.batch_size)
+            self._raw_ds = self._raw_ds.map(
+                self.prepare_for_batching,
+                num_parallel_calls=self.num_parallel_calls,
+                deterministic=True,
+            )
+            self._raw_ds = self._raw_ds.batch(self.batch_size)
         self._preprocessed_ds = self._raw_ds.map(
             self.preprocessing,
             num_parallel_calls=self.num_parallel_calls,
             deterministic=True,
         )
-        if self.batch_size is not None and self.batch_size > 1 and self.rebatch:
-            self._preprocessed_ds = self._preprocessed_ds.batch(self.batch_size)
         if self.n_samples is not None:
             self._preprocessed_ds = self._preprocessed_ds.take(self.n_samples)
         if self.repeat:
@@ -191,6 +192,9 @@ class FastMRIDatasetBuilder:
         # By default, we just return the images and kspace
         preprocessing_outputs = self._preprocessing_train(*data_tensors)
         return preprocessing_outputs
+
+    def prepare_for_batching(self, *data_tensors):
+        return data_tensors
 
     def filter_condition(self, contrast, af=None, num_slices=None):
         if self.mode == 'train':

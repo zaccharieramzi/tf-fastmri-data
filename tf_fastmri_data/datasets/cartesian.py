@@ -71,8 +71,8 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         )
         return mask
 
-    def _preprocessing_train(self, image, kspace, output_shape=None):
-        if self.batch_size is not None and self.batch_size > 1:
+    def prepare_for_batching(self, image, kspace, output_shape=None):
+        if self.batch_size > 1:
             complex_image = ortho_ifft2d(kspace)
             complex_image_padded = adjust_image_size(
                 complex_image,
@@ -80,6 +80,12 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
                 multicoil=self.multicoil,
             )
             kspace = ortho_fft2d(complex_image_padded)
+        if output_shape is None
+            return image, kspace
+        else:
+            return image, kspace, output_shape
+
+    def _preprocessing_train(self, image, kspace, output_shape=None):
         mask = self.gen_mask(kspace)
         kspace = tf.cast(mask, kspace.dtype) * kspace
         kspace, image = scale_tensors(kspace, image, scale_factor=self.scale_factor)
@@ -93,9 +99,6 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             output_shape = tf.shape(image)[1:][None, :]
             output_shape = tf.tile(output_shape, [tf.shape(image)[0], 1])
             model_inputs += (output_shape,)
-        if self.batch_size is not None and self.batch_size > 1:
-            model_inputs = tuple(mi[0] for mi in model_inputs)
-            image = image[0]
         return model_inputs, image
 
     def _preprocessing_test(self, mask, kspace, output_shape=None):
