@@ -149,6 +149,8 @@ class FastMRIDatasetBuilder:
                 num_parallel_calls=self.num_parallel_calls,
                 deterministic=True,
             )
+        if self.batch_size is not None:
+            self._raw_ds = self._raw_ds.batch(1)
         self._preprocessed_ds = self._raw_ds.map(
             self.preprocessing,
             num_parallel_calls=self.num_parallel_calls,
