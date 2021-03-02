@@ -3,9 +3,10 @@ import tensorflow_io as tfio
 
 from tf_fastmri_data.dataset_builder import FastMRIDatasetBuilder
 from tf_fastmri_data.preprocessing_utils.extract_smaps import extract_smaps
-from tf_fastmri_data.preprocessing_utils.fourier.cartesian import ortho_ifft2d
+from tf_fastmri_data.preprocessing_utils.fourier.cartesian import ortho_ifft2d, ortho_fft2d
 from tf_fastmri_data.preprocessing_utils.masking import mask_random, mask_equidistant, mask_reshaping_and_casting
 from tf_fastmri_data.preprocessing_utils.scaling import scale_tensors
+from tf_fastmri_data.preprocessing_utils.size_adjustment import adjust_image_size
 
 
 class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
@@ -16,6 +17,7 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             mask_mode=None,
             scale_factor=1e6,
             output_shape_spec=None,
+            target_image_size=(640, 400),
             **kwargs,
         ):
         self.dataset = dataset
@@ -43,6 +45,7 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             self.output_shape_spec = brain
         else:
             self.output_shape_spec = output_shape_spec
+        self.target_image_size = target_image_size
         super(CartesianFastMRIDatasetBuilder, self).__init__(
             dataset=self.dataset,
             brain=self.brain,
@@ -64,8 +67,23 @@ class CartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             kspace,
             accel_factor=self.af,
             multicoil=self.multicoil,
+            slice_different=self.batch_size is not None and self.batch_size > 1,
         )
         return mask
+
+    def prepare_for_batching(self, image, kspace, output_shape=None):
+        if self.batch_size > 1:
+            complex_image = ortho_ifft2d(kspace)
+            complex_image_padded = adjust_image_size(
+                complex_image[None],
+                self.target_image_size,
+                multicoil=self.multicoil,
+            )[0]
+            kspace = ortho_fft2d(complex_image_padded)
+        if output_shape is None:
+            return image, kspace
+        else:
+            return image, kspace, output_shape
 
     def _preprocessing_train(self, image, kspace, output_shape=None):
         mask = self.gen_mask(kspace)

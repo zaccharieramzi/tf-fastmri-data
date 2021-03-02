@@ -150,6 +150,11 @@ class FastMRIDatasetBuilder:
                 deterministic=True,
             )
         if self.batch_size is not None:
+            self._raw_ds = self._raw_ds.map(
+                self.prepare_for_batching,
+                num_parallel_calls=self.num_parallel_calls,
+                deterministic=True,
+            )
             self._raw_ds = self._raw_ds.batch(self.batch_size)
         self._preprocessed_ds = self._raw_ds.map(
             self.preprocessing,
@@ -187,6 +192,9 @@ class FastMRIDatasetBuilder:
         # By default, we just return the images and kspace
         preprocessing_outputs = self._preprocessing_train(*data_tensors)
         return preprocessing_outputs
+
+    def prepare_for_batching(self, *data_tensors):
+        return data_tensors
 
     def filter_condition(self, contrast, af=None, num_slices=None):
         if self.mode == 'train':
