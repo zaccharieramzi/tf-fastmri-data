@@ -26,13 +26,5 @@ def _crop_for_nufft(image, im_size):
 def nufft(nufft_ob, image, ktraj, image_size=None):
     forward_op = kbnufft_forward(nufft_ob._extract_nufft_interpob(), multiprocessing=True)
     shape = tf.shape(image)[-1]
-    if image_size is not None:
-        image_adapted = tf.cond(
-            tf.math.greater(shape, image_size[-1]),
-            lambda: _crop_for_nufft(image, image_size),
-            lambda: _pad_for_nufft(image, image_size),
-        )
-    else:
-        image_adapted = image
-    kspace = forward_op(image_adapted, ktraj)
+    kspace = forward_op(image, ktraj)
     return kspace
