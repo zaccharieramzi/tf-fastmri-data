@@ -101,7 +101,8 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         if self.crop_image_data:
             image = adjust_image_size(image, self.image_size)
         else:
-            output_shape = tf.shape(image)
+            output_shape = tf.shape(image)[1:][None, :]
+            output_shape = tf.tile(output_shape, [tf.shape(image)[0], 1])
         extra_args = (orig_shape,)
         if self.dcomp:
             dcomp = tf.ones(
