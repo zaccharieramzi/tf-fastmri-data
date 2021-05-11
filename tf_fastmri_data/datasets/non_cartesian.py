@@ -26,6 +26,7 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             dcomp=True,
             scale_factor=1e6,
             traj=None,
+            crop_image_data=False,
             **kwargs,
         ):
         self.image_size = image_size
@@ -34,6 +35,7 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         self._check_acq_type()
         self.dcomp = dcomp
         self.scale_factor = scale_factor
+        self.crop_image_data = crop_image_data
         self.nufft_obj = KbNufftModule(
             im_size=self.image_size,
             grid_size=None,
@@ -91,12 +93,15 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             )
         traj = tf.repeat(traj, tf.shape(image)[0], axis=0)
         orig_image_channels = ortho_ifft2d(kspace)
-        image = adjust_image_size(image, self.image_size)
         nc_kspace = nufft(self.nufft_obj, orig_image_channels, traj, self.image_size, multicoil=self.multicoil)
         nc_kspace, image = scale_tensors(nc_kspace, image, scale_factor=self.scale_factor)
         image = image[..., None]
         nc_kspaces_channeled = nc_kspace[..., None]
-        orig_shape = self.image_size
+        orig_shape = tf.ones([tf.shape(kspace)[0]], dtype=tf.int32) * tf.shape(self.image_size)[-1]
+        if self.crop_image_data:
+            image = adjust_image_size(image, self.image_size)
+        else:
+            output_shape = image.shape
         extra_args = (orig_shape,)
         if self.dcomp:
             dcomp = tf.ones(
@@ -106,7 +111,9 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             extra_args += (dcomp,)
         model_inputs = (nc_kspaces_channeled, traj)
         if self.multicoil:
-            smaps = non_cartesian_extract_smaps(nc_kspace, traj, dcomp, nufftob_back, orig_shape)
+            smaps = non_cartesian_extract_smaps(nc_kspace, traj, dcomp, nufftob_back, self.image_size)
             model_inputs += (smaps,)
+        if not self.crop_image_data:
+            model_inputs += (output_shape,)
         model_inputs += (extra_args,)
         return model_inputs, image
