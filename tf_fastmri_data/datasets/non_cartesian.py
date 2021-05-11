@@ -96,7 +96,7 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         nc_kspace, image = scale_tensors(nc_kspace, image, scale_factor=self.scale_factor)
         image = image[..., None]
         nc_kspaces_channeled = nc_kspace[..., None]
-        orig_shape = tf.ones([tf.shape(kspace)[0]], dtype=tf.int32) * tf.shape(kspace)[-1]
+        orig_shape = self.image_size
         extra_args = (orig_shape,)
         if self.dcomp:
             dcomp = tf.ones(
