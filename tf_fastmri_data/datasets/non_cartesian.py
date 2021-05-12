@@ -84,8 +84,7 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
         interpob = self.nufft_obj._extract_nufft_interpob()
         nufftob_forw = kbnufft_forward(interpob, multiprocessing=True)
         nufftob_back = kbnufft_adjoint(interpob, multiprocessing=True)
-        if self.dcomp or self.multicoil:
-            # We need density compensators even if it is multi coil to estimate smaps!
+        if self.dcomp:
             dcomp = calculate_density_compensator(
                 interpob,
                 nufftob_forw,

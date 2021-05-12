@@ -5,8 +5,8 @@ from tf_fastmri_data.datasets.non_cartesian import NonCartesianFastMRIDatasetBui
 
 
 
-@pytest.mark.parametrize('acq_type', ['radial', 'spiral'])
-@pytest.mark.parametrize('dcomp', [True, False])
+@pytest.mark.parametrize('acq_type', ['radial'])
+@pytest.mark.parametrize('dcomp', [True])
 @pytest.mark.parametrize('multicoil', [True, False])
 @pytest.mark.parametrize('slice_random', [True, False])
 @pytest.mark.parametrize('crop_image_data', [True, False])
