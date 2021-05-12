@@ -93,14 +93,14 @@ class NonCartesianFastMRIDatasetBuilder(FastMRIDatasetBuilder):
             )
         traj = tf.repeat(traj, tf.shape(image)[0], axis=0)
         orig_image_channels = ortho_ifft2d(kspace)
+        if self.crop_image_data:
+            image = adjust_image_size(image, self.image_size)
         nc_kspace = nufft(self.nufft_obj, orig_image_channels, traj, self.image_size, multicoil=self.multicoil)
         nc_kspace, image = scale_tensors(nc_kspace, image, scale_factor=self.scale_factor)
         image = image[..., None]
         nc_kspaces_channeled = nc_kspace[..., None]
         orig_shape = tf.ones([tf.shape(kspace)[0]], dtype=tf.int32) * self.image_size[-1]
-        if self.crop_image_data:
-            image = adjust_image_size(image, self.image_size)
-        else:
+        if not self.crop_image_data:
             output_shape = tf.shape(image)[1:][None, :]
             output_shape = tf.tile(output_shape, [tf.shape(image)[0], 1])
         extra_args = (orig_shape,)
