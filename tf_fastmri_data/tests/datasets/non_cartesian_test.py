@@ -8,7 +8,7 @@ from tf_fastmri_data.datasets.non_cartesian import NonCartesianFastMRIDatasetBui
 @pytest.mark.parametrize('acq_type', ['radial'])
 @pytest.mark.parametrize('dcomp', [True])
 @pytest.mark.parametrize('multicoil', [True, False])
-@pytest.mark.parametrize('slice_random', [True, False])
+@pytest.mark.parametrize('slice_random', [True])
 @pytest.mark.parametrize('crop_image_data', [True, False])
 @pytest.mark.parametrize('image_size', [(20, 20)])
 def test_non_cartesian_dataset_train(create_full_fastmri_test_tmp_dataset, acq_type, dcomp, multicoil, slice_random, crop_image_data, image_size):
@@ -39,7 +39,7 @@ def test_non_cartesian_dataset_train(create_full_fastmri_test_tmp_dataset, acq_t
         np.testing.assert_equal(smaps.shape[-2:], image_size)
     else:
         if crop_image_data:
-            op_args = _others
+            op_args = _others[0]
         else:
             output_shape, op_args = _others
             np.testing.assert_equal(output_shape[0], image.shape[-3:])
