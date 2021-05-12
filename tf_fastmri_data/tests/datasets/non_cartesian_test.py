@@ -10,7 +10,7 @@ from tf_fastmri_data.datasets.non_cartesian import NonCartesianFastMRIDatasetBui
 @pytest.mark.parametrize('multicoil', [True, False])
 @pytest.mark.parametrize('slice_random', [True, False])
 @pytest.mark.parametrize('crop_image_data', [True, False])
-@pytest.mark.parametrize('image_size', [(320, 320), (384, 384)])
+@pytest.mark.parametrize('image_size', [(20, 20)])
 def test_non_cartesian_dataset_train(create_full_fastmri_test_tmp_dataset, acq_type, dcomp, multicoil, slice_random, crop_image_data, image_size):
     if multicoil:
         path = create_full_fastmri_test_tmp_dataset['fastmri_tmp_multicoil_train']
