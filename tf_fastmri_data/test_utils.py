@@ -1,12 +1,12 @@
 import h5py
 import numpy as np
-import pytest
 import tensorflow as tf
-from tf_fastmri_data.test_utils import create_full_fastmri_tmp_dataset, create_data, ktraj_function
 
-K_shape_single_coil = (2, 640, 322)
-K_shape_multi_coil = (2, 15, 640, 322)
-I_shape = (2, 320, 320)
+
+num_slices = 2
+K_shape_single_coil = (num_slices, 640, 322)
+K_shape_multi_coil = (num_slices, 15, 640, 322)
+I_shape = (num_slices, 320, 320)
 contrast = 'CORPD_FBK'
 fake_xml = b"""<?xml version="1.0" encoding="utf-8"?>\n<ismrmrdHeader xmlns="http://www.ismrm.org/ISMRMRD" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.ismrm.org/ISMRMRD ismrmrd.xsd">\n   <studyInformation>\n      <studyTime>16:35:20</studyTime>\n   </studyInformation>\n   <measurementInformation>\n      <measurementID>41964_51683669_51683678_4583</measurementID>\n      <patientPosition>HFS</patientPosition>\n
 <protocolName>AX FLAIR_FBB</protocolName>\n      <frameOfReferenceUID>1.3.12.2.1107.5.2.18.41964.1.20190707162548138.0.0.5022</frameOfReferenceUID>\n   </measurementInformation>\n   <acquisitionSystemInformation>\n      <systemVendor>SIEMENS</systemVendor>\n      <systemModel>Aera</systemModel>\n      <systemFieldStrength_T>1.494</systemFieldStrength_T>\n      <relativeReceiverNoiseBandwidth>0.793</relativeReceiverNoiseBandwidth>\n      <receiverChannels>16</receiverChannels>\n\
@@ -26,11 +26,135 @@ fake_xml = b"""<?xml version="1.0" encoding="utf-8"?>\n<ismrmrdHeader xmlns="htt
 <userParameterDouble>\n         <name>MaxwellCoefficient_11</name>\n         <value>0</value>\n      </userParameterDouble>\n      <userParameterDouble>\n         <name>MaxwellCoefficient_12</name>\n         <value>0</value>\n      </userParameterDouble>\n      <userParameterDouble>\n         <name>MaxwellCoefficient_13</name>\n         <value>0</value>\n      </userParameterDouble>\n      <userParameterDouble>\n         <name>MaxwellCoefficient_14</name>\n         <value>0</value>\n\
 </userParameterDouble>\n      <userParameterDouble>\n         <name>MaxwellCoefficient_15</name>\n         <value>0</value>\n      </userParameterDouble>\n   </userParameters>\n</ismrmrdHeader>"""
 
+def create_data(filename, multicoil=False, train=True):
+    k_shape = K_shape_single_coil
+    if multicoil:
+        k_shape = K_shape_multi_coil
+    if train:
+        image_ds = "reconstruction_esc"
+        if multicoil:
+            image_ds = "reconstruction_rss"
+        image = np.random.normal(size=I_shape)
+        image = image.astype(np.float32)
+    else:
+        mask_shape = [K_shape_multi_coil[-1]]
+        mask = np.random.choice(a=[True, False], size=mask_shape)
+        af = 4
+    kspace = np.random.normal(size=k_shape) + 1j * np.random.normal(size=k_shape)
+    kspace = kspace.astype(np.complex64)
+    with h5py.File(filename, "w") as h5_obj:
+        h5_obj.create_dataset("kspace", data=kspace)
+        h5_obj.create_dataset('ismrmrd_header', data=fake_xml)
+        if train:
+            h5_obj.create_dataset(image_ds, data=image)
+        else:
+            h5_obj.create_dataset('mask', data=mask)
+            h5_obj.attrs['acceleration'] = af
+        h5_obj.attrs['acquisition'] = contrast
+    if not train:
+        return af
 
-@pytest.fixture(scope='session', autouse=False)
-def ktraj():
-    return ktraj_function
+def ktraj_function(image_shape, nspokes):
+    # radial trajectory creation
+    spokelength = image_shape[-1] * 2
+    nspokes = 15
+    ga = np.deg2rad(180 / ((1 + np.sqrt(5)) / 2))
+    kx = np.zeros(shape=(spokelength, nspokes))
+    ky = np.zeros(shape=(spokelength, nspokes))
+    ky[:, 0] = np.linspace(-np.pi, np.pi, spokelength)
+    for i in range(1, nspokes):
+        kx[:, i] = np.cos(ga) * kx[:, i - 1] - np.sin(ga) * ky[:, i - 1]
+        ky[:, i] = np.sin(ga) * kx[:, i - 1] + np.cos(ga) * ky[:, i - 1]
 
-@pytest.fixture(scope="session", autouse=False)
-def create_full_fastmri_test_tmp_dataset(tmpdir_factory):
-    return create_full_fastmri_tmp_dataset(tmpdir_factory)
+    ky = np.transpose(ky)
+    kx = np.transpose(kx)
+
+    traj = np.stack((ky.flatten(), kx.flatten()), axis=0)
+    traj = tf.convert_to_tensor(traj)[None, ...]
+    return traj
+
+
+def create_full_fastmri_tmp_dataset(tmpdir_factory, n_files=2):
+    # main dirs
+    fastmri_tmp_data_dir = tmpdir_factory.mktemp(
+        "fastmri_test_tmp_data",
+        numbered=False,
+    )
+    #### single coil
+    fastmri_tmp_singlecoil_train = tmpdir_factory.mktemp(str(
+        fastmri_tmp_data_dir.join('singlecoil_train')
+    ), numbered=False)
+    fastmri_tmp_singlecoil_val = tmpdir_factory.mktemp(str(
+        fastmri_tmp_data_dir.join('singlecoil_val')
+    ), numbered=False)
+    fastmri_tmp_singlecoil_test = tmpdir_factory.mktemp(str(
+        fastmri_tmp_data_dir.join('singlecoil_test')
+    ), numbered=False)
+    # train
+    for i in range(n_files):
+        data_filename = f"train_singlecoil_{i}.h5"
+        create_data(str(fastmri_tmp_singlecoil_train.join(data_filename)))
+    # val
+    for i in range(n_files):
+        data_filename = f"val_singlecoil_{i}.h5"
+        create_data(str(fastmri_tmp_singlecoil_val.join(data_filename)))
+    # test
+    af_single_coil = []
+    for i in range(n_files):
+        data_filename = f"test_singlecoil_{i}.h5"
+        af = create_data(
+            str(fastmri_tmp_singlecoil_test.join(data_filename)),
+            multicoil=False,
+            train=False,
+        )
+        af_single_coil.append(af)
+    #### multi coil
+    fastmri_tmp_multicoil_train = tmpdir_factory.mktemp(str(
+        fastmri_tmp_data_dir.join('multicoil_train')
+    ), numbered=False)
+    fastmri_tmp_multicoil_val = tmpdir_factory.mktemp(str(
+        fastmri_tmp_data_dir.join('multicoil_val')
+    ), numbered=False)
+    fastmri_tmp_multicoil_test = tmpdir_factory.mktemp(str(
+        fastmri_tmp_data_dir.join('multicoil_test')
+    ), numbered=False)
+    # train
+    for i in range(n_files):
+        data_filename = f"train_multicoil_{i}.h5"
+        create_data(
+            str(fastmri_tmp_multicoil_train.join(data_filename)),
+            multicoil=True,
+        )
+    # val
+    for i in range(n_files):
+        data_filename = f"val_multicoil_{i}.h5"
+        create_data(
+            str(fastmri_tmp_multicoil_val.join(data_filename)),
+            multicoil=True,
+        )
+    # test
+    af_multi_coil = []
+    for i in range(n_files):
+        data_filename = f"test_multicoil_{i}.h5"
+        af = create_data(
+            str(fastmri_tmp_multicoil_test.join(data_filename)),
+            multicoil=True,
+            train=False,
+        )
+        af_multi_coil.append(af)
+
+    return {
+        'fastmri_tmp_data_dir': str(fastmri_tmp_data_dir) + '/',
+        'fastmri_tmp_singlecoil_train': str(fastmri_tmp_singlecoil_train) + '/',
+        'fastmri_tmp_singlecoil_val': str(fastmri_tmp_singlecoil_val) + '/',
+        'fastmri_tmp_singlecoil_test': str(fastmri_tmp_singlecoil_test) + '/',
+        'fastmri_tmp_multicoil_train': str(fastmri_tmp_multicoil_train) + '/',
+        'fastmri_tmp_multicoil_val': str(fastmri_tmp_multicoil_val) + '/',
+        'fastmri_tmp_multicoil_test': str(fastmri_tmp_multicoil_test) + '/',
+        'af_single_coil': af_single_coil,
+        'af_multi_coil': af_multi_coil,
+        'K_shape_single_coil': K_shape_single_coil,
+        'K_shape_multi_coil': K_shape_multi_coil,
+        'I_shape': I_shape,
+        'contrast': contrast,
+    }
