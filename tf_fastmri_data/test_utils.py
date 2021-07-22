@@ -2,6 +2,20 @@ import h5py
 import numpy as np
 import tensorflow as tf
 
+key_map = {
+    # multicoil
+    True: {
+        'train': 'fastmri_tmp_multicoil_train',
+        'val': 'fastmri_tmp_multicoil_val',
+        'test': 'fastmri_tmp_multicoil_test',
+    },
+    # not multicoil
+    False: {
+        'train': 'fastmri_tmp_singlecoil_train',
+        'val': 'fastmri_tmp_singlecoil_val',
+        'test': 'fastmri_tmp_singlecoil_test',
+    },
+}
 
 num_slices = 2
 K_shape_single_coil = (num_slices, 640, 322)
