@@ -9,7 +9,7 @@ with open('requirements.txt') as open_file:
 
 setuptools.setup(
     name="tf-fastmri-data",
-    version="0.0.4",
+    version="0.0.5",
     author="Zaccharie Ramzi",
     author_email="zaccharie.ramzi@gmail.com",
     description="Data pipelines for the fastMRI dataset in TensorFlow.",
