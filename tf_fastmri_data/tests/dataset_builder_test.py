@@ -1,22 +1,8 @@
 import pytest
 
 from tf_fastmri_data.dataset_builder import FastMRIDatasetBuilder
+from tf_fastmri_data.test_utils import key_map
 
-
-key_map = {
-    # multicoil
-    True: {
-        'train': 'fastmri_tmp_multicoil_train',
-        'val': 'fastmri_tmp_multicoil_val',
-        'test': 'fastmri_tmp_multicoil_test',
-    },
-    # not multicoil
-    False: {
-        'train': 'fastmri_tmp_singlecoil_train',
-        'val': 'fastmri_tmp_singlecoil_val',
-        'test': 'fastmri_tmp_singlecoil_test',
-    },
-}
 
 @pytest.mark.parametrize('dataset', ['train', 'test', 'val'])
 @pytest.mark.parametrize('multicoil', [True, False])
