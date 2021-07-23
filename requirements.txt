@@ -1,6 +1,7 @@
 h5py
 ismrmrd
 numpy
+matplotlib
 tensorflow>=2.2
 tensorflow-io>=0.15.0
 tfkbnufft
