@@ -7,15 +7,18 @@ with open("README.md", "r") as fh:
 with open('requirements.txt') as open_file:
     install_requires = open_file.read()
 
+import tf_fastmri_data
+
 setuptools.setup(
     name="tf-fastmri-data",
-    version="0.0.5",
-    author="Zaccharie Ramzi",
-    author_email="zaccharie.ramzi@gmail.com",
-    description="Data pipelines for the fastMRI dataset in TensorFlow.",
+    version=tf_fastmri_data.__version__,
+    author=tf_fastmri_data.__author__,
+    author_email=tf_fastmri_data.__author_email__,
+    description=tf_fastmri_data.__docs__,
+    license=tf_fastmri_data.__license__,
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/zaccharieramzi/tf-fastmri-data",
+    url=tf_fastmri_data.__homepage__,
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
