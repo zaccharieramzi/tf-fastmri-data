@@ -17,14 +17,14 @@ class FastMRIDatasetBuilder:
             brain=False,
             multicoil=False,
             slice_random=False,
-            contrast='all',
+            contrast=None,
             split_slices=False,
             af=4,
             shuffle=False,
             seed=0,
             prebuild=True,
             repeat=True,
-            n_samples=-1,
+            n_samples=None,
             output_shapes=None,
             prefetch=True,
             no_kspace=False,
@@ -172,7 +172,7 @@ class FastMRIDatasetBuilder:
             num_parallel_calls=self.num_parallel_calls,
             deterministic=True,
         )
-        if self.n_samples != -1:
+        if self.n_samples is not None:
             self._preprocessed_ds = self._preprocessed_ds.take(self.n_samples)
         if self.repeat:
             self._preprocessed_ds = self._preprocessed_ds.repeat()
@@ -209,13 +209,13 @@ class FastMRIDatasetBuilder:
 
     def filter_condition(self, contrast, af=None, num_slices=None):
         if self.mode == 'train':
-            if self.contrast == 'all':
+            if self.contrast is None:
                 return True
             else:
                 condition = contrast == self.contrast
                 return condition
         elif self.mode == 'test':
             condition = af == self.af
-            if self.contrast != 'all':
+            if self.contrast is not None:
                 condition = condition and contrast == self.contrast
             return condition
