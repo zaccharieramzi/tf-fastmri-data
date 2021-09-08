@@ -206,7 +206,7 @@ class FastMRIDatasetBuilder:
     def prepare_for_batching(self, *data_tensors):
         return data_tensors
 
-    def check_contrast(contrast):
+    def check_contrast(self, contrast):
         if not isinstance(self.contrast, str):
             return contrast in self.contrast
         else:
