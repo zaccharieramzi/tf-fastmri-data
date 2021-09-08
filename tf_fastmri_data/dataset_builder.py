@@ -206,19 +206,20 @@ class FastMRIDatasetBuilder:
     def prepare_for_batching(self, *data_tensors):
         return data_tensors
 
+    def check_contrast(contrast):
+        if not isinstance(self.contrast, str):
+            return contrast in self.contrast
+        else:
+            return contrast == self.contrast
+
     def filter_condition(self, contrast, af=None, num_slices=None):
-        def _check_contrast(contrast):
-            if not isinstance(self.contrast, str):
-                return contrast in self.contrast
-            else:
-                return contrast == self.contrast
         if self.mode == 'train':
             if self.contrast is None:
                 return True
             else:
-                return _check_contrast(contrast)
+                return self.check_contrast(contrast)
         elif self.mode == 'test':
             condition = af == self.af
             if self.contrast is not None:
-                condition = condition and _check_contrast(contrast)
+                condition = condition and self.check_contrast(contrast)
             return condition
