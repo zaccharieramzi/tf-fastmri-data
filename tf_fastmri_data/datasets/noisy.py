@@ -2,6 +2,7 @@ import tensorflow as tf
 
 from tf_fastmri_data.dataset_builder import FastMRIDatasetBuilder
 from tf_fastmri_data.preprocessing_utils.fourier.cartesian import ortho_ifft2d
+from tf_fastmri_data.preprocessing_utils.crop import adjust_image_size
 from tf_fastmri_data.preprocessing_utils.scaling import scale_tensors
 
 
@@ -108,6 +109,8 @@ class ComplexNoisyFastMRIDatasetBuilder(NoisyFastMRIDatasetBuilder):
 
     def _preprocessing_train(self, image):
         image = scale_tensors(image, scale_factor=self.scale_factor)[0]
+        # Resize here as it is not done by builder
+        image = adjust_image_size(image, [self.image_size, self.image_size], multicoil=self.multicoil)
         image = image[..., None]
         noise_power = self.draw_noise_power(batch_size=tf.shape(image)[0])
         normal_noise = tf.random.normal(

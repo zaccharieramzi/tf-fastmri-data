@@ -207,14 +207,18 @@ class FastMRIDatasetBuilder:
         return data_tensors
 
     def filter_condition(self, contrast, af=None, num_slices=None):
+        def _check_contrast(contrast):
+            if not isinstance(self.contrast, str):
+                return contrast in self.contrast
+            else:
+                return contrast == self.contrast
         if self.mode == 'train':
             if self.contrast is None:
                 return True
             else:
-                condition = contrast == self.contrast
-                return condition
+                return _check_contrast(contrast)
         elif self.mode == 'test':
             condition = af == self.af
             if self.contrast is not None:
-                condition = condition and contrast == self.contrast
+                condition = condition and _check_contrast(contrast)
             return condition
