@@ -142,9 +142,8 @@ class FastMRIDatasetBuilder:
         )
         if self.complex_image:
             # you can only ask complex image if you ask for kspace
-            # for now also available only for knee images (320 x 320)
             self._raw_ds = self._raw_ds.map(
-                lambda _, kspace: crop(ortho_ifft2d(kspace), (320, 320)),
+                lambda _, kspace: ortho_ifft2d(kspace),
                 num_parallel_calls=self.num_parallel_calls,
                 deterministic=True,
             )
@@ -207,15 +206,20 @@ class FastMRIDatasetBuilder:
     def prepare_for_batching(self, *data_tensors):
         return data_tensors
 
+    def check_contrast(self, contrast):
+        if not isinstance(self.contrast, str):
+            return contrast in self.contrast
+        else:
+            return contrast == self.contrast
+
     def filter_condition(self, contrast, af=None, num_slices=None):
         if self.mode == 'train':
             if self.contrast is None:
                 return True
             else:
-                condition = contrast == self.contrast
-                return condition
+                return self.check_contrast(contrast)
         elif self.mode == 'test':
             condition = af == self.af
             if self.contrast is not None:
-                condition = condition and contrast == self.contrast
+                condition = condition and self.check_contrast(contrast)
             return condition
