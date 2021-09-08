@@ -142,9 +142,8 @@ class FastMRIDatasetBuilder:
         )
         if self.complex_image:
             # you can only ask complex image if you ask for kspace
-            # for now also available only for knee images (320 x 320)
             self._raw_ds = self._raw_ds.map(
-                lambda _, kspace: crop(ortho_ifft2d(kspace), (320, 320)),
+                lambda _, kspace: ortho_ifft2d(kspace),
                 num_parallel_calls=self.num_parallel_calls,
                 deterministic=True,
             )
