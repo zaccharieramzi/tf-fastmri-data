@@ -95,15 +95,9 @@ def create_full_fastmri_tmp_dataset(tmpdir_factory, n_files=2):
         numbered=False,
     )
     #### single coil
-    fastmri_tmp_singlecoil_train = tmpdir_factory.mktemp(str(
-        fastmri_tmp_data_dir.join('singlecoil_train')
-    ), numbered=False)
-    fastmri_tmp_singlecoil_val = tmpdir_factory.mktemp(str(
-        fastmri_tmp_data_dir.join('singlecoil_val')
-    ), numbered=False)
-    fastmri_tmp_singlecoil_test = tmpdir_factory.mktemp(str(
-        fastmri_tmp_data_dir.join('singlecoil_test')
-    ), numbered=False)
+    fastmri_tmp_singlecoil_train = fastmri_tmp_data_dir.join('singlecoil_train').mkdir()
+    fastmri_tmp_singlecoil_val = fastmri_tmp_data_dir.join('singlecoil_val').mkdir()
+    fastmri_tmp_singlecoil_test = fastmri_tmp_data_dir.join('singlecoil_test').mkdir()
     # train
     for i in range(n_files):
         data_filename = f"train_singlecoil_{i}.h5"
@@ -123,15 +117,9 @@ def create_full_fastmri_tmp_dataset(tmpdir_factory, n_files=2):
         )
         af_single_coil.append(af)
     #### multi coil
-    fastmri_tmp_multicoil_train = tmpdir_factory.mktemp(str(
-        fastmri_tmp_data_dir.join('multicoil_train')
-    ), numbered=False)
-    fastmri_tmp_multicoil_val = tmpdir_factory.mktemp(str(
-        fastmri_tmp_data_dir.join('multicoil_val')
-    ), numbered=False)
-    fastmri_tmp_multicoil_test = tmpdir_factory.mktemp(str(
-        fastmri_tmp_data_dir.join('multicoil_test')
-    ), numbered=False)
+    fastmri_tmp_multicoil_train = fastmri_tmp_data_dir.join('multicoil_train').mkdir()
+    fastmri_tmp_multicoil_val = fastmri_tmp_data_dir.join('multicoil_val').mkdir()
+    fastmri_tmp_multicoil_test = fastmri_tmp_data_dir.join('multicoil_test').mkdir()
     # train
     for i in range(n_files):
         data_filename = f"train_multicoil_{i}.h5"
